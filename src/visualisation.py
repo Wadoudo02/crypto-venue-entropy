@@ -21,6 +21,7 @@ VENUE_COLOURS = {
     "binance": "#F0B90B",   # Binance yellow
     "bybit": "#F7A600",     # Bybit orange
     "okx": "#121212",       # OKX dark
+    "coinbase": "#0052FF",  # Coinbase blue
 }
 
 REGIME_COLOURS = {

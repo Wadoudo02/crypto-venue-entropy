@@ -121,21 +121,62 @@ The README should be polished and serve as a standalone summary. Structure:
 
 ---
 
+## 3b. Analysis Framework — Two Distinct Research Questions
+
+This project investigates two separate but related questions about information flow in crypto markets. They use the same entropy toolkit but operate on different data groupings and answer fundamentally different things. It is important to keep them cleanly separated.
+
+### Analysis A: Cross-Venue Perpetual Futures (Primary)
+
+**Question:** Among the three major BTC perpetual futures venues (Binance, OKX, Bybit), where does informed trading originate and how does information propagate between them?
+
+**Data:** Binance BTCUSDT Perp + OKX BTCUSDT Perp + Bybit BTCUSDT Perp
+
+**Why this is apples-to-apples:** All three are the same instrument type (perpetual futures) on the same underlying (BTC) with the same quote currency (USDT). Differences in entropy, trade sign persistence, and transfer entropy between them genuinely reflect differences in trader composition, latency, and information content, not differences in instrument mechanics.
+
+**What the entropy measures tell us here:**
+- **Shannon entropy per venue:** Which venue has the most "informed" (low-entropy, directional) order flow vs the most "noisy" (high-entropy, balanced) flow?
+- **Transfer entropy (3x3 matrix):** For each directed venue pair, how much does knowing one venue's recent trades reduce uncertainty about the other's near future? This reveals the information leadership hierarchy.
+- **Rolling transfer entropy:** Does the leadership hierarchy shift during the crash? Does a different venue lead during high-volatility vs low-volatility regimes?
+
+**Trading implication:** A cross-venue HFT desk can monitor transfer entropy in real time. When TE(Binance → OKX) spikes, it signals that Binance is leading and the desk should execute on OKX before the information is fully absorbed. When leadership flips, the strategy flips with it.
+
+### Analysis B: Perpetual Futures vs Spot (Secondary / Extension)
+
+**Question:** Does price discovery happen in the derivatives market or the spot market, and does that leadership relationship change during regime shifts?
+
+**Data:** Binance BTCUSDT Perp (representative of the perp market) vs Coinbase BTC-USD Spot (institutional reference for spot)
+
+**Why this requires separate treatment:** Perps and spot are fundamentally different instruments. Perps have leverage, funding rates, and attract a different trader population. Spot is unleveraged, involves actual asset transfer, and is the reference for institutional pricing (ETF NAVs, CME reference rates). Comparing them is valuable, but the interpretation of entropy differences must account for these structural differences rather than attributing everything to "information flow."
+
+**What the entropy measures tell us here:**
+- **Transfer entropy (perp → spot vs spot → perp):** Does informed trading express first in leveraged perps and then get reflected in spot? Or do institutional spot flows lead?
+- **Regime-dependent leadership:** During the crash week, did the direction of information flow between perp and spot change? Liquidation cascades in perps might temporarily make perps the leader; institutional selling on spot might lead during calmer periods.
+
+**Trading implication:** Understanding whether perp leads spot (or vice versa) tells an HFT desk where to place its monitoring infrastructure and where to execute. If perps consistently lead by 500ms, a desk watching spot is always late.
+
+### Why the Separation Matters
+
+Mixing perp and spot venues in a single transfer entropy matrix would conflate two effects: venue-level information advantages (what we want to measure) and instrument-level structural differences (a confound). By analysing perp-to-perp and perp-vs-spot separately, each finding has a clean interpretation.
+
+Analysis A is the core of this project. Analysis B is a compelling extension if time permits, and the data is being collected now to keep the option open.
+
+---
+
 ## 4. Detailed Phase Plan
 
 ### Phase 1: Setup & Data Acquisition
 **Goal:** Get clean, aligned trade data from 3 venues ready for analysis.
 
 **Tasks:**
-- [ ] Create GitHub repo with the structure above
-- [ ] Set up Python environment (requirements.txt)
-- [ ] Write data download scripts/instructions for each venue
-- [ ] Download 1-2 weeks of BTC-USDT perp trade data from Binance, Bybit, OKX
-- [ ] Standardise and clean data (src/data.py)
-- [ ] Classify trade sides where needed
-- [ ] Align timestamps across venues
-- [ ] Run quality checks and document any issues
-- [ ] Save processed data to data/processed/
+- [x] Create GitHub repo with the structure above
+- [x] Set up Python environment (requirements.txt)
+- [x] Write data download scripts/instructions for each venue
+- [x] Download 1-2 weeks of BTC-USDT perp trade data from Binance, Bybit, OKX *(Binance done; Bybit & OKX pending)*
+- [x] Standardise and clean data (src/data.py)
+- [x] Classify trade sides where needed
+- [x] Align timestamps across venues
+- [x] Run quality checks and document any issues
+- [x] Save processed data to data/processed/
 
 **Key dependencies:** numpy, pandas, requests, pyarrow (for Parquet)
 
