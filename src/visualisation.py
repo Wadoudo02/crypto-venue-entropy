@@ -19,7 +19,7 @@ import seaborn as sns
 # Colour palette: one colour per venue
 VENUE_COLOURS = {
     "binance": "#F0B90B",   # Binance yellow
-    "bybit": "#F7A600",     # Bybit orange
+    "bybit": "#7B2FBE",     # Bybit purple
     "okx": "#121212",       # OKX dark
     "coinbase": "#0052FF",  # Coinbase blue
 }

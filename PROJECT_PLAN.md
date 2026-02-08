@@ -171,7 +171,7 @@ Analysis A is the core of this project. Analysis B is a compelling extension if 
 - [x] Create GitHub repo with the structure above
 - [x] Set up Python environment (requirements.txt)
 - [x] Write data download scripts/instructions for each venue
-- [x] Download 1-2 weeks of BTC-USDT perp trade data from Binance, Bybit, OKX *(Binance done; Bybit & OKX pending)*
+- [x] Download 1-2 weeks of BTC-USDT perp trade data from Binance & Bybit *(OKX CDN archives ~6 months behind; see Note_to_Assessor.md)*
 - [x] Standardise and clean data (src/data.py)
 - [x] Classify trade sides where needed
 - [x] Align timestamps across venues
