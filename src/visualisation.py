@@ -271,6 +271,177 @@ def plot_entropy_timeseries(
     return fig
 
 
+def plot_entropy_comparison(
+    entropy_data: dict[str, dict[str, pd.DataFrame]],
+    title: str = "Shannon Entropy at Multiple Window Sizes",
+) -> plt.Figure:
+    """Multi-panel figure: one row per window size, both venues overlaid.
+
+    Parameters
+    ----------
+    entropy_data : dict[str, dict[str, pd.DataFrame]]
+        Nested dict: {window_label: {venue_name: entropy_df}}.
+        Each entropy_df has columns 'timestamp' and 'normalised_entropy'.
+    title : str
+        Overall figure title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    windows = list(entropy_data.keys())
+    n_panels = len(windows)
+    fig, axes = plt.subplots(n_panels, 1, figsize=(14, 4 * n_panels), sharex=True)
+    if n_panels == 1:
+        axes = [axes]
+
+    for ax, win_label in zip(axes, windows):
+        for venue, edf in entropy_data[win_label].items():
+            colour = VENUE_COLOURS.get(venue, None)
+            ax.plot(edf["timestamp"], edf["normalised_entropy"],
+                    label=venue.capitalize(), color=colour, alpha=0.7, linewidth=0.8)
+        ax.axhline(1.0, color="grey", linewidth=0.8, linestyle="--", alpha=0.5)
+        ax.set_ylabel(f"Entropy ({win_label})")
+        ax.set_ylim(0, 1.1)
+        ax.legend(loc="lower left")
+
+    axes[-1].set_xlabel("Time (UTC)")
+    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
+    fig.suptitle(title, fontsize=14, y=1.01)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def plot_transfer_entropy(
+    te_forward: pd.DataFrame,
+    te_reverse: pd.DataFrame,
+    source_name: str = "Binance",
+    target_name: str = "Bybit",
+    price_data: pd.Series | None = None,
+    title: str = None,
+) -> plt.Figure:
+    """Plot rolling transfer entropy in both directions with net TE panel.
+
+    Parameters
+    ----------
+    te_forward : pd.DataFrame
+        Rolling TE(source -> target) with 'timestamp' and 'te' columns.
+    te_reverse : pd.DataFrame
+        Rolling TE(target -> source) with 'timestamp' and 'te' columns.
+    source_name : str
+        Name of source venue.
+    target_name : str
+        Name of target venue.
+    price_data : pd.Series or None
+        Optional price series for overlay.
+    title : str or None
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    if title is None:
+        title = f"Rolling Transfer Entropy: {source_name} ↔ {target_name}"
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True,
+                                    gridspec_kw={"height_ratios": [2, 1]})
+
+    # Top panel: TE in both directions
+    ax1.plot(te_forward["timestamp"], te_forward["te"],
+             color=VENUE_COLOURS.get(source_name.lower(), "#F0B90B"),
+             label=f"TE({source_name}→{target_name})", alpha=0.8)
+    ax1.plot(te_reverse["timestamp"], te_reverse["te"],
+             color=VENUE_COLOURS.get(target_name.lower(), "#7B2FBE"),
+             label=f"TE({target_name}→{source_name})", alpha=0.8)
+    ax1.set_ylabel("Transfer Entropy (bits)")
+    ax1.legend(loc="upper left")
+    ax1.set_title(title)
+
+    if price_data is not None:
+        ax1b = ax1.twinx()
+        ax1b.plot(price_data.index, price_data.values, color="grey",
+                  alpha=0.3, linewidth=1, label="Price")
+        ax1b.set_ylabel("Price (USDT)")
+        ax1b.legend(loc="upper right")
+
+    # Bottom panel: Net TE
+    net_te = te_forward["te"].values - te_reverse["te"].values
+    timestamps = te_forward["timestamp"]
+    ax2.fill_between(timestamps, net_te, 0,
+                     where=net_te >= 0, color="#2ecc71", alpha=0.4,
+                     label=f"{source_name} leads")
+    ax2.fill_between(timestamps, net_te, 0,
+                     where=net_te < 0, color="#e74c3c", alpha=0.4,
+                     label=f"{target_name} leads")
+    ax2.axhline(0, color="black", linewidth=0.5)
+    ax2.set_ylabel("Net TE (bits)")
+    ax2.set_xlabel("Time (UTC)")
+    ax2.legend(loc="lower left")
+
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def plot_entropy_vs_volatility(
+    entropy_data: pd.DataFrame,
+    volatility_data: pd.Series,
+    venue_name: str,
+    title: str = None,
+) -> plt.Figure:
+    """Scatter plot of normalised entropy vs realised volatility.
+
+    Tests the statistical mechanics hypothesis: high volatility -> high entropy.
+
+    Parameters
+    ----------
+    entropy_data : pd.DataFrame
+        DataFrame with 'timestamp' and 'normalised_entropy' columns.
+    volatility_data : pd.Series
+        Realised volatility series (datetime-indexed).
+    venue_name : str
+        Venue name for labelling.
+    title : str or None
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    if title is None:
+        title = f"Entropy vs Realised Volatility — {venue_name.capitalize()}"
+
+    # Align on timestamps
+    ent = entropy_data.set_index("timestamp")["normalised_entropy"]
+    common = ent.index.intersection(volatility_data.index)
+    ent_aligned = ent.loc[common]
+    vol_aligned = volatility_data.loc[common]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    colour = VENUE_COLOURS.get(venue_name.lower(), "#333333")
+    ax.scatter(vol_aligned.values, ent_aligned.values, alpha=0.15, s=10,
+               color=colour, edgecolors="none")
+
+    # Correlation annotation
+    corr = np.corrcoef(vol_aligned.values, ent_aligned.values)[0, 1]
+    ax.annotate(f"ρ = {corr:.3f}", xy=(0.05, 0.95), xycoords="axes fraction",
+                fontsize=12, fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+
+    ax.set_xlabel("Realised Volatility")
+    ax.set_ylabel("Normalised Entropy")
+    ax.set_title(title)
+    ax.set_ylim(0, 1.1)
+    fig.tight_layout()
+    return fig
+
+
 def plot_transfer_entropy_heatmap(
     te_matrix: pd.DataFrame,
     title: str = "Transfer Entropy Between Venues",
