@@ -136,6 +136,7 @@ def plot_trade_sign_acf(
     fig.tight_layout()
     return fig
 
+from matplotlib.ticker import FormatStrFormatter
 
 def plot_cross_correlation(
     xcorr_df: pd.DataFrame,
@@ -156,9 +157,19 @@ def plot_cross_correlation(
         Matplotlib figure.
     """
     fig, ax = plt.subplots()
+
     for col in xcorr_df.columns:
         ax.plot(xcorr_df.index, xcorr_df[col], label=col, alpha=0.8)
+
     ax.axvline(0, color="grey", linewidth=0.5, linestyle="--")
+
+    ax.ticklabel_format(axis="y", style="plain", useOffset=False)
+    ax.yaxis.set_major_formatter(FormatStrFormatter("%.6f"))
+
+    ymin, ymax = xcorr_df.min().min(), xcorr_df.max().max()
+    pad = 0.1 * (ymax - ymin)
+    ax.set_ylim(ymin - pad, ymax + pad)
+
     ax.set_title(title)
     ax.set_xlabel("Lag (periods)")
     ax.set_ylabel("Pearson Correlation")
