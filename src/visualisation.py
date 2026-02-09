@@ -98,6 +98,117 @@ def plot_price_overlay(
     return fig
 
 
+# ---------------------------------------------------------------------------
+# Phase 2: Microstructure exploration plots
+# ---------------------------------------------------------------------------
+
+
+def plot_trade_sign_acf(
+    acf_dict: dict[str, np.ndarray],
+    title: str = "Trade Sign Autocorrelation by Venue",
+) -> plt.Figure:
+    """Overlay ACF curves of trade signs for multiple venues.
+
+    Parameters
+    ----------
+    acf_dict : dict[str, np.ndarray]
+        Mapping of venue name to ACF array (lag 0 … max_lag).
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    fig, ax = plt.subplots()
+    for venue, acf_vals in acf_dict.items():
+        colour = VENUE_COLOURS.get(venue, None)
+        ax.plot(range(len(acf_vals)), acf_vals, label=venue.capitalize(),
+                color=colour, alpha=0.8)
+    ax.axhline(0, color="grey", linewidth=0.5, linestyle="--")
+    ax.axhline(1 / np.e, color="grey", linewidth=0.8, linestyle=":",
+               label="1/e threshold")
+    ax.set_title(title)
+    ax.set_xlabel("Lag (trades)")
+    ax.set_ylabel("Autocorrelation")
+    ax.legend()
+    fig.tight_layout()
+    return fig
+
+
+def plot_cross_correlation(
+    xcorr_df: pd.DataFrame,
+    title: str = "Cross-Venue Return Correlation by Lag",
+) -> plt.Figure:
+    """Plot cross-correlation between venue pairs at various lags.
+
+    Parameters
+    ----------
+    xcorr_df : pd.DataFrame
+        DataFrame indexed by lag with a column per venue pair.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    fig, ax = plt.subplots()
+    for col in xcorr_df.columns:
+        ax.plot(xcorr_df.index, xcorr_df[col], label=col, alpha=0.8)
+    ax.axvline(0, color="grey", linewidth=0.5, linestyle="--")
+    ax.set_title(title)
+    ax.set_xlabel("Lag (periods)")
+    ax.set_ylabel("Pearson Correlation")
+    ax.legend()
+    fig.tight_layout()
+    return fig
+
+
+def plot_intraday_pattern(
+    hourly_dict: dict[str, pd.Series],
+    ylabel: str = "Value",
+    title: str = "Intraday Pattern by Venue",
+) -> plt.Figure:
+    """Side-by-side bar chart of intraday patterns for multiple venues.
+
+    Parameters
+    ----------
+    hourly_dict : dict[str, pd.Series]
+        Mapping of venue name to Series indexed by hour (0–23).
+    ylabel : str
+        Y-axis label.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    fig, ax = plt.subplots()
+    venues = list(hourly_dict.keys())
+    n = len(venues)
+    width = 0.8 / n
+    hours = np.arange(24)
+
+    for i, venue in enumerate(venues):
+        colour = VENUE_COLOURS.get(venue, None)
+        values = hourly_dict[venue].reindex(hours, fill_value=0)
+        ax.bar(hours + i * width - 0.4 + width / 2, values,
+               width=width, label=venue.capitalize(), color=colour, alpha=0.8)
+
+    ax.set_title(title)
+    ax.set_xlabel("Hour (UTC)")
+    ax.set_ylabel(ylabel)
+    ax.set_xticks(hours)
+    ax.legend()
+    fig.tight_layout()
+    return fig
+
+
 def plot_entropy_timeseries(
     entropy_dict: dict[str, pd.Series],
     prices: pd.Series | None = None,

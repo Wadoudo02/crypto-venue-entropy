@@ -52,7 +52,27 @@ def cross_venue_correlation(
     pd.DataFrame
         Cross-correlation matrix indexed by lag, with venue-pair columns.
     """
-    raise NotImplementedError("Cross-venue correlation will be implemented in Phase 2.")
+    venues = list(returns_dict.keys())
+    lags = range(-max_lag, max_lag + 1)
+    results = {}
+
+    for i, v1 in enumerate(venues):
+        for v2 in venues[i + 1:]:
+            s1 = returns_dict[v1].fillna(0.0)
+            s2 = returns_dict[v2].fillna(0.0)
+            corrs = []
+            for lag in lags:
+                if lag > 0:
+                    corrs.append(s1.iloc[:-lag].corr(s2.iloc[lag:]))
+                elif lag < 0:
+                    corrs.append(s1.iloc[-lag:].corr(s2.iloc[:lag]))
+                else:
+                    corrs.append(s1.corr(s2))
+            results[f"{v1} → {v2}"] = corrs
+
+    df_out = pd.DataFrame(results, index=list(lags))
+    df_out.index.name = "lag"
+    return df_out
 
 
 def compute_trade_arrival_rate(

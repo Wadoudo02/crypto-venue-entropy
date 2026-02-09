@@ -188,25 +188,33 @@ Analysis A is the core of this project. Analysis B is a compelling extension if 
 **Goal:** Establish baseline understanding of each venue's microstructure properties before applying physics frameworks.
 
 **Tasks:**
-- [ ] Compute basic statistics per venue:
+- [x] Compute basic statistics per venue:
   - Trade arrival rates (trades per second, by hour of day)
   - Trade size distributions (mean, median, heavy-tail check)
-  - Bid-ask spread proxy (where possible from trade data)
-- [ ] Autocorrelation of trade signs at each venue
-  - Plot ACF of trade signs up to ~100 lags
-  - Compare persistence across venues (which venue has more "herding"?)
-- [ ] Cross-venue return correlation at various lags
+  - Cross-venue spread proxy (|Binance − Bybit| at 1s resolution)
+- [x] Autocorrelation of trade signs at each venue
+  - Plot ACF of trade signs up to 100 lags
+  - Compare persistence across venues (Binance: 93 trades, Bybit: 52 trades to 1/e)
+- [x] Cross-venue return correlation at various lags
   - Compute returns at 1s, 5s, 10s, 30s, 1min frequencies
   - Cross-correlation between venue pairs at each frequency
-  - Identify basic lead-lag structure
-- [ ] Initial visualisations:
+  - Lead-lag analysis via lagged cross-correlation (±30s)
+- [x] Initial visualisations:
   - Intraday patterns (trade intensity by hour)
-  - Price overlay across venues (how closely do they track?)
+  - Price overlay across venues
   - Trade sign autocorrelation comparison
+  - Correlation vs frequency plot
+  - Heavy-tail CCDF (log-log)
+  - Cross-venue spread vs realised volatility
 
-**Trading implication preview:** "Venue X has higher trade sign persistence, suggesting more informed/directional flow. Venue Y shows near-random trade signs, suggesting more noise/market-making activity."
+**Key findings:**
+- Binance ~2× Bybit in trade arrival rate (115 vs 58 trades/s mean)
+- Binance has higher trade sign persistence (93 vs 52 trades to 1/e threshold)
+- Cross-venue correlation: 0.93 at 1s, converging to ~1.0 at 1min (Epps effect)
+- Mean cross-venue spread: $5.43, co-moves with realised volatility
+- Both venues exhibit heavy-tailed trade size distributions (kurtosis: 1.1M Binance, 44K Bybit)
 
-**Output:** Notebook 02 with exploratory findings and initial observations.
+**Output:** Notebook 02 with exploratory findings, 6 saved figures, and trading implications per section.
 
 ---
 
