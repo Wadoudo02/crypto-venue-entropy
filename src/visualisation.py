@@ -141,6 +141,7 @@ from matplotlib.ticker import FormatStrFormatter
 def plot_cross_correlation(
     xcorr_df: pd.DataFrame,
     title: str = "Cross-Venue Return Correlation by Lag",
+    zero_the_axis = False,
 ) -> plt.Figure:
     """Plot cross-correlation between venue pairs at various lags.
 
@@ -165,10 +166,13 @@ def plot_cross_correlation(
 
     ax.ticklabel_format(axis="y", style="plain", useOffset=False)
     ax.yaxis.set_major_formatter(FormatStrFormatter("%.6f"))
-
-    ymin, ymax = xcorr_df.min().min(), xcorr_df.max().max()
-    pad = 0.1 * (ymax - ymin)
-    ax.set_ylim(ymin - pad, ymax + pad)
+    if zero_the_axis:
+        ymin, ymax = xcorr_df.min().min(), xcorr_df.max().max()
+        ax.set_ylim(0, ymax + 0.1)
+    else:
+        ymin, ymax = xcorr_df.min().min(), xcorr_df.max().max()
+        pad = 0.1 * (ymax - ymin)
+        ax.set_ylim(ymin - pad, ymax + pad)
 
     ax.set_title(title)
     ax.set_xlabel("Lag (periods)")
