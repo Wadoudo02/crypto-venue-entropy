@@ -520,39 +520,85 @@ def plot_regime_timeline(
     regimes: pd.Series,
     prices: pd.Series,
     title: str = "Market Regime Classification",
+    smooth_window: int = 6,
 ) -> plt.Figure:
     """Plot regime classification as coloured background with price overlay.
+
+    Applies a rolling majority-vote smoothing to produce visually coherent
+    regime blocks, consistent with the macroscopic perspective of the
+    phase transition framework.
 
     Parameters
     ----------
     regimes : pd.Series
-        Regime labels (datetime-indexed): "hot", "cold", or "critical".
+        Regime labels (datetime-indexed): "hot", "cold", "critical", "transitional".
     prices : pd.Series
         Price series (datetime-indexed).
     title : str
         Plot title.
+    smooth_window : int
+        Rolling window for majority-vote smoothing (default 6 = 30 min at 5-min resolution).
 
     Returns
     -------
     plt.Figure
         Matplotlib figure.
     """
-    fig, ax = plt.subplots()
+    # --- Majority-vote smoothing ---
+    if smooth_window > 1:
+        smoothed = regimes.copy()
+        half = smooth_window // 2
+        for i in range(half, len(regimes) - half):
+            window = regimes.iloc[i - half:i + half + 1]
+            counts = window.value_counts()
+            smoothed.iloc[i] = counts.index[0]  # Most frequent label
+        regimes = smoothed
 
-    ax.plot(prices.index, prices.values, color="black", linewidth=1, alpha=0.8)
+    fig, ax = plt.subplots(figsize=(16, 6))
 
+    ax.plot(prices.index, prices.values, color="black", linewidth=1, alpha=0.8,
+            zorder=3)
+
+    # --- Plot contiguous regime blocks as axvspan ---
     for regime, colour in REGIME_COLOURS.items():
         mask = regimes == regime
-        if mask.any():
-            ax.fill_between(
-                regimes.index, prices.min(), prices.max(),
-                where=mask, alpha=0.15, color=colour, label=regime.capitalize(),
-            )
+        if not mask.any():
+            continue
+
+        # Find contiguous blocks
+        indices = mask.index[mask]
+        if len(indices) == 0:
+            continue
+
+        # Group consecutive timestamps
+        blocks = []
+        block_start = indices[0]
+        block_end = indices[0]
+
+        for j in range(1, len(indices)):
+            # Check if this index is consecutive (within 2x the step size)
+            gap = (indices[j] - indices[j - 1]).total_seconds()
+            step = pd.Timedelta(regimes.index.freq or "5min").total_seconds()
+            if gap <= step * 1.5:
+                block_end = indices[j]
+            else:
+                blocks.append((block_start, block_end))
+                block_start = indices[j]
+                block_end = indices[j]
+        blocks.append((block_start, block_end))
+
+        # Plot each block
+        for k, (start, end) in enumerate(blocks):
+            # Extend end by one step so the block has visible width
+            end_ext = end + pd.Timedelta(regimes.index.freq or "5min")
+            ax.axvspan(start, end_ext, alpha=0.25, color=colour,
+                       label=regime.capitalize() if k == 0 else None,
+                       zorder=1)
 
     ax.set_title(title)
     ax.set_xlabel("Time (UTC)")
     ax.set_ylabel("Price (USDT)")
-    ax.legend()
+    ax.legend(loc="upper right")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
     fig.autofmt_xdate()
     fig.tight_layout()

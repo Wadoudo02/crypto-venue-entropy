@@ -89,21 +89,19 @@ def susceptibility(
 
 def correlation_length(
     returns: np.ndarray,
-    window: int = 1000,
-    threshold: float = 1 / np.e,
+    window: int = 3600,
     max_lag: int = 100,
     use_absolute: bool = True,
 ) -> np.ndarray:
-    """Compute rolling correlation length from autocorrelation decay.
+    """
+    Compute rolling integrated autocorrelation time (correlation length).
 
-    Correlation length = lag at which ACF drops below threshold.
-    Diverging correlation length signals critical slowing down.
-
-    By default uses absolute returns |r| rather than raw returns,
-    because raw returns are nearly uncorrelated (EMH), but absolute
-    returns exhibit volatility clustering with significant, slowly
-    decaying autocorrelation — the relevant signal for detecting
-    regime persistence and critical slowing down.
+    Uses the integrated autocorrelation time from computational physics:
+        τ_int = 0.5 + Σ_{k=1}^{M} ACF(k)
+    
+    This is more robust than first-threshold-crossing methods for weakly 
+    autocorrelated processes, as it captures the cumulative memory across
+    all lags rather than relying on a single threshold.
 
     Parameters
     ----------
@@ -111,18 +109,15 @@ def correlation_length(
         Return series.
     window : int
         Rolling window size.
-    threshold : float
-        ACF threshold for defining correlation length (default 1/e).
     max_lag : int
-        Maximum lag to search for threshold crossing.
+        Maximum lag for ACF summation.
     use_absolute : bool
         If True, compute ACF of |returns| (volatility clustering).
-        If False, compute ACF of raw returns.
 
     Returns
     -------
     np.ndarray
-        Rolling correlation length values. Returns max_lag if threshold not crossed.
+        Rolling integrated autocorrelation time.
     """
     series = np.abs(returns) if use_absolute else returns
     n = len(series)
@@ -130,31 +125,27 @@ def correlation_length(
 
     for i in range(window, n):
         window_data = series[i - window:i]
-        # Remove mean for autocorrelation
         window_data = window_data - np.nanmean(window_data)
-
-        # Compute ACF up to max_lag
-        acf_vals = np.zeros(max_lag + 1)
-        acf_vals[0] = 1.0  # By definition
 
         variance = np.nanvar(window_data)
         if variance == 0:
-            corr_lengths[i] = 0
+            corr_lengths[i] = 0.5
             continue
 
+        # Compute integrated autocorrelation time
+        # τ_int = 0.5 + Σ ACF(k) for k=1..M
+        # Truncate sum when ACF first goes negative (standard practice)
+        tau = 0.5
         for lag in range(1, max_lag + 1):
             if lag >= len(window_data):
                 break
-            # Autocorrelation at lag k
             covariance = np.nanmean(window_data[:-lag] * window_data[lag:])
-            acf_vals[lag] = covariance / variance
+            acf_k = covariance / variance
+            if acf_k < 0:
+                break  # Standard truncation: stop at first negative ACF
+            tau += acf_k
 
-        # Find first lag where ACF drops below threshold
-        below_threshold = np.where(acf_vals[1:] < threshold)[0]
-        if len(below_threshold) > 0:
-            corr_lengths[i] = below_threshold[0] + 1  # +1 because we skipped lag 0
-        else:
-            corr_lengths[i] = max_lag  # Didn't cross threshold
+        corr_lengths[i] = tau
 
     return corr_lengths
 
