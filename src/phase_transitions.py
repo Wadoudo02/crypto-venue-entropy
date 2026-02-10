@@ -91,6 +91,7 @@ def correlation_length(
     returns: np.ndarray,
     window: int = 1000,
     threshold: float = 1 / np.e,
+    max_lag: int = 100,
 ) -> np.ndarray:
     """Compute rolling correlation length from return autocorrelation decay.
 
@@ -105,19 +106,52 @@ def correlation_length(
         Rolling window size.
     threshold : float
         ACF threshold for defining correlation length (default 1/e).
+    max_lag : int
+        Maximum lag to search for threshold crossing.
 
     Returns
     -------
     np.ndarray
-        Rolling correlation length values.
+        Rolling correlation length values. Returns max_lag if threshold not crossed.
     """
-    raise NotImplementedError("Correlation length will be implemented in Phase 4.")
+    n = len(returns)
+    corr_lengths = np.full(n, np.nan)
+
+    for i in range(window, n):
+        window_returns = returns[i - window:i]
+        # Remove mean for autocorrelation
+        window_returns = window_returns - np.nanmean(window_returns)
+
+        # Compute ACF up to max_lag
+        acf_vals = np.zeros(max_lag + 1)
+        acf_vals[0] = 1.0  # By definition
+
+        variance = np.nanvar(window_returns)
+        if variance == 0:
+            corr_lengths[i] = 0
+            continue
+
+        for lag in range(1, max_lag + 1):
+            if lag >= len(window_returns):
+                break
+            # Autocorrelation at lag k
+            covariance = np.nanmean(window_returns[:-lag] * window_returns[lag:])
+            acf_vals[lag] = covariance / variance
+
+        # Find first lag where ACF drops below threshold
+        below_threshold = np.where(acf_vals[1:] < threshold)[0]
+        if len(below_threshold) > 0:
+            corr_lengths[i] = below_threshold[0] + 1  # +1 because we skipped lag 0
+        else:
+            corr_lengths[i] = max_lag  # Didn't cross threshold
+
+    return corr_lengths
 
 
 def detect_entropy_discontinuities(
     entropy_series: np.ndarray,
     threshold: float = 2.0,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     """Detect sharp jumps in entropy time series.
 
     Identifies both first-order-like (sudden jumps) and second-order-like
@@ -132,16 +166,29 @@ def detect_entropy_discontinuities(
 
     Returns
     -------
-    np.ndarray
-        Boolean array marking detected discontinuity locations.
+    tuple[np.ndarray, np.ndarray]
+        - Boolean array marking detected discontinuity locations
+        - First derivative (rate of change) of entropy series
     """
-    raise NotImplementedError("Entropy discontinuity detection will be implemented in Phase 4.")
+    # Compute first derivative (rate of change)
+    derivative = np.zeros_like(entropy_series)
+    derivative[1:] = np.diff(entropy_series)
+
+    # Compute statistics of derivative
+    mean_deriv = np.nanmean(derivative)
+    std_deriv = np.nanstd(derivative)
+
+    # Flag discontinuities: |derivative| > threshold * std
+    discontinuities = np.abs(derivative - mean_deriv) > (threshold * std_deriv)
+
+    return discontinuities, derivative
 
 
 def classify_regime(
     volatility: np.ndarray,
     entropy: np.ndarray,
     corr_length: np.ndarray,
+    susceptibility: np.ndarray = None,
 ) -> np.ndarray:
     """Classify market regime using phase transition framework.
 
@@ -158,10 +205,61 @@ def classify_regime(
         Shannon entropy of trade signs.
     corr_length : np.ndarray
         Autocorrelation decay length.
+    susceptibility : np.ndarray, optional
+        Variance of order flow imbalance. If provided, used for critical regime detection.
 
     Returns
     -------
     np.ndarray
         String array of regime labels.
     """
-    raise NotImplementedError("Regime classification will be implemented in Phase 4.")
+    n = len(entropy)
+    regimes = np.full(n, "", dtype=object)
+
+    # Compute percentile thresholds for each observable
+    # Filter out NaN values for threshold calculation
+    valid_vol = volatility[~np.isnan(volatility)]
+    valid_ent = entropy[~np.isnan(entropy)]
+    valid_corr = corr_length[~np.isnan(corr_length)]
+
+    vol_25, vol_75 = np.percentile(valid_vol, [25, 75])
+    ent_25, ent_75 = np.percentile(valid_ent, [25, 75])
+    corr_25, corr_75 = np.percentile(valid_corr, [25, 75])
+
+    # Compute correlation length rate of change for "diverging" detection
+    corr_deriv = np.zeros_like(corr_length)
+    corr_deriv[1:] = np.diff(corr_length)
+    valid_deriv = corr_deriv[~np.isnan(corr_deriv)]
+    corr_deriv_90 = np.percentile(valid_deriv, 90)  # Rapidly increasing
+
+    if susceptibility is not None:
+        valid_susc = susceptibility[~np.isnan(susceptibility)]
+        susc_90 = np.percentile(valid_susc, 90)
+
+    for i in range(n):
+        # Skip if any observable is NaN
+        if np.isnan(volatility[i]) or np.isnan(entropy[i]) or np.isnan(corr_length[i]):
+            regimes[i] = "unknown"
+            continue
+
+        # Critical regime: intermediate values BUT with diverging correlation length
+        # or high susceptibility
+        is_critical = False
+        if corr_deriv[i] > corr_deriv_90:  # Correlation length rapidly increasing
+            is_critical = True
+        elif susceptibility is not None and susceptibility[i] > susc_90:
+            is_critical = True
+
+        if is_critical:
+            regimes[i] = "critical"
+        # Hot regime: high entropy, high volatility, low correlation length
+        elif entropy[i] > ent_75 and volatility[i] > vol_75 and corr_length[i] < corr_25:
+            regimes[i] = "hot"
+        # Cold regime: low entropy, low volatility, high correlation length
+        elif entropy[i] < ent_25 and volatility[i] < vol_25 and corr_length[i] > corr_75:
+            regimes[i] = "cold"
+        # Otherwise, transitional/mixed state
+        else:
+            regimes[i] = "transitional"
+
+    return regimes

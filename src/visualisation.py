@@ -557,3 +557,206 @@ def plot_regime_timeline(
     fig.autofmt_xdate()
     fig.tight_layout()
     return fig
+
+
+def plot_phase_observables(
+    timestamps: pd.Index,
+    temperature: np.ndarray,
+    order_parameter: np.ndarray,
+    susceptibility: np.ndarray,
+    prices: pd.Series = None,
+    title: str = "Phase Transition Observables",
+) -> plt.Figure:
+    """Plot temperature, order parameter, and susceptibility with price overlay.
+
+    Parameters
+    ----------
+    timestamps : pd.Index
+        Datetime index for x-axis.
+    temperature : np.ndarray
+        Temperature analogue (realized volatility).
+    order_parameter : np.ndarray
+        Order parameter (order flow imbalance).
+    susceptibility : np.ndarray
+        Susceptibility (variance of imbalance).
+    prices : pd.Series, optional
+        Price series for overlay.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure with 4 subplots.
+    """
+    if prices is not None:
+        fig, axes = plt.subplots(4, 1, figsize=(14, 12), sharex=True)
+    else:
+        fig, axes = plt.subplots(3, 1, figsize=(14, 10), sharex=True)
+
+    plot_idx = 0
+
+    # Price panel (if provided)
+    if prices is not None:
+        axes[plot_idx].plot(prices.index, prices.values, color="black", linewidth=1, alpha=0.8)
+        axes[plot_idx].set_ylabel("Price (USDT)")
+        axes[plot_idx].set_title("BTC Price")
+        plot_idx += 1
+
+    # Temperature (volatility)
+    axes[plot_idx].plot(timestamps, temperature, color="#e74c3c", linewidth=1, alpha=0.8)
+    axes[plot_idx].set_ylabel("Temperature\n(Volatility)")
+    axes[plot_idx].set_title("Temperature Analogue (Realized Volatility)")
+    plot_idx += 1
+
+    # Order parameter (imbalance)
+    axes[plot_idx].plot(timestamps, order_parameter, color="#3498db", linewidth=1, alpha=0.8)
+    axes[plot_idx].axhline(0, color="grey", linestyle="--", linewidth=0.8, alpha=0.5)
+    axes[plot_idx].set_ylabel("Order Parameter\n(Imbalance)")
+    axes[plot_idx].set_title("Order Parameter (Net Order Flow Imbalance)")
+    axes[plot_idx].set_ylim(-1.1, 1.1)
+    plot_idx += 1
+
+    # Susceptibility
+    axes[plot_idx].plot(timestamps, susceptibility, color="#f39c12", linewidth=1, alpha=0.8)
+    axes[plot_idx].set_ylabel("Susceptibility\n(Variance)")
+    axes[plot_idx].set_title("Susceptibility (Variance of Imbalance)")
+    axes[plot_idx].set_xlabel("Time (UTC)")
+
+    for ax in axes:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
+
+    fig.suptitle(title, fontsize=14, y=0.995)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def plot_correlation_length_timeseries(
+    timestamps: pd.Index,
+    correlation_length: np.ndarray,
+    prices: pd.Series = None,
+    title: str = "Correlation Length Evolution",
+) -> plt.Figure:
+    """Plot correlation length time series with price overlay.
+
+    Parameters
+    ----------
+    timestamps : pd.Index
+        Datetime index for x-axis.
+    correlation_length : np.ndarray
+        Correlation length values.
+    prices : pd.Series, optional
+        Price series for overlay.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    if prices is not None:
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+        # Price panel
+        ax1.plot(prices.index, prices.values, color="black", linewidth=1, alpha=0.8)
+        ax1.set_ylabel("Price (USDT)")
+        ax1.set_title("BTC Price")
+        # Correlation length panel
+        ax2.plot(timestamps, correlation_length, color="#9b59b6", linewidth=1, alpha=0.8)
+        ax2.fill_between(timestamps, 0, correlation_length, alpha=0.2, color="#9b59b6")
+        ax2.set_ylabel("Correlation Length\n(lags)")
+        ax2.set_xlabel("Time (UTC)")
+        ax2.set_title("Correlation Length (Critical Slowing Down)")
+        ax2.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
+        fig.suptitle(title, fontsize=14, y=0.995)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+    else:
+        fig, ax = plt.subplots(figsize=(14, 6))
+        ax.plot(timestamps, correlation_length, color="#9b59b6", linewidth=1, alpha=0.8)
+        ax.fill_between(timestamps, 0, correlation_length, alpha=0.2, color="#9b59b6")
+        ax.set_ylabel("Correlation Length (lags)")
+        ax.set_xlabel("Time (UTC)")
+        ax.set_title(title)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+    return fig
+
+
+def plot_entropy_discontinuities(
+    timestamps: pd.Index,
+    entropy: np.ndarray,
+    derivative: np.ndarray,
+    discontinuities: np.ndarray,
+    prices: pd.Series = None,
+    title: str = "Entropy Discontinuity Detection",
+) -> plt.Figure:
+    """Plot entropy, its derivative, and detected discontinuities.
+
+    Parameters
+    ----------
+    timestamps : pd.Index
+        Datetime index for x-axis.
+    entropy : np.ndarray
+        Shannon entropy time series.
+    derivative : np.ndarray
+        First derivative of entropy.
+    discontinuities : np.ndarray
+        Boolean array marking discontinuity locations.
+    prices : pd.Series, optional
+        Price series for overlay.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure with 3 subplots.
+    """
+    if prices is not None:
+        fig, axes = plt.subplots(3, 1, figsize=(14, 10), sharex=True)
+        # Price panel
+        axes[0].plot(prices.index, prices.values, color="black", linewidth=1, alpha=0.8)
+        axes[0].set_ylabel("Price (USDT)")
+        axes[0].set_title("BTC Price")
+        plot_idx = 1
+    else:
+        fig, axes = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+        plot_idx = 0
+
+    # Entropy panel
+    axes[plot_idx].plot(timestamps, entropy, color="#2ecc71", linewidth=1, alpha=0.8)
+    # Mark discontinuities
+    if discontinuities.any():
+        disc_times = timestamps[discontinuities]
+        disc_values = entropy[discontinuities]
+        axes[plot_idx].scatter(disc_times, disc_values, color="#e74c3c", s=50,
+                              marker='x', zorder=5, label="Discontinuities")
+    axes[plot_idx].set_ylabel("Entropy (bits)")
+    axes[plot_idx].set_title("Shannon Entropy Time Series")
+    axes[plot_idx].legend()
+    plot_idx += 1
+
+    # Derivative panel
+    axes[plot_idx].plot(timestamps, derivative, color="#3498db", linewidth=0.8, alpha=0.8)
+    axes[plot_idx].axhline(0, color="grey", linestyle="--", linewidth=0.8, alpha=0.5)
+    # Mark discontinuities
+    if discontinuities.any():
+        disc_times = timestamps[discontinuities]
+        disc_deriv = derivative[discontinuities]
+        axes[plot_idx].scatter(disc_times, disc_deriv, color="#e74c3c", s=50,
+                               marker='x', zorder=5)
+    axes[plot_idx].set_ylabel("dH/dt")
+    axes[plot_idx].set_xlabel("Time (UTC)")
+    axes[plot_idx].set_title("Entropy Rate of Change (First Derivative)")
+
+    for ax in axes:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d %H:%M"))
+
+    fig.suptitle(title, fontsize=14, y=0.995)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
