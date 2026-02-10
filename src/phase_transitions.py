@@ -92,11 +92,18 @@ def correlation_length(
     window: int = 1000,
     threshold: float = 1 / np.e,
     max_lag: int = 100,
+    use_absolute: bool = True,
 ) -> np.ndarray:
-    """Compute rolling correlation length from return autocorrelation decay.
+    """Compute rolling correlation length from autocorrelation decay.
 
     Correlation length = lag at which ACF drops below threshold.
     Diverging correlation length signals critical slowing down.
+
+    By default uses absolute returns |r| rather than raw returns,
+    because raw returns are nearly uncorrelated (EMH), but absolute
+    returns exhibit volatility clustering with significant, slowly
+    decaying autocorrelation — the relevant signal for detecting
+    regime persistence and critical slowing down.
 
     Parameters
     ----------
@@ -108,34 +115,38 @@ def correlation_length(
         ACF threshold for defining correlation length (default 1/e).
     max_lag : int
         Maximum lag to search for threshold crossing.
+    use_absolute : bool
+        If True, compute ACF of |returns| (volatility clustering).
+        If False, compute ACF of raw returns.
 
     Returns
     -------
     np.ndarray
         Rolling correlation length values. Returns max_lag if threshold not crossed.
     """
-    n = len(returns)
+    series = np.abs(returns) if use_absolute else returns
+    n = len(series)
     corr_lengths = np.full(n, np.nan)
 
     for i in range(window, n):
-        window_returns = returns[i - window:i]
+        window_data = series[i - window:i]
         # Remove mean for autocorrelation
-        window_returns = window_returns - np.nanmean(window_returns)
+        window_data = window_data - np.nanmean(window_data)
 
         # Compute ACF up to max_lag
         acf_vals = np.zeros(max_lag + 1)
         acf_vals[0] = 1.0  # By definition
 
-        variance = np.nanvar(window_returns)
+        variance = np.nanvar(window_data)
         if variance == 0:
             corr_lengths[i] = 0
             continue
 
         for lag in range(1, max_lag + 1):
-            if lag >= len(window_returns):
+            if lag >= len(window_data):
                 break
             # Autocorrelation at lag k
-            covariance = np.nanmean(window_returns[:-lag] * window_returns[lag:])
+            covariance = np.nanmean(window_data[:-lag] * window_data[lag:])
             acf_vals[lag] = covariance / variance
 
         # Find first lag where ACF drops below threshold
@@ -242,23 +253,42 @@ def classify_regime(
             regimes[i] = "unknown"
             continue
 
-        # Critical regime: intermediate values BUT with diverging correlation length
-        # or high susceptibility
+        # Critical regime: diverging correlation length or high susceptibility
         is_critical = False
         if corr_deriv[i] > corr_deriv_90:  # Correlation length rapidly increasing
             is_critical = True
-        elif susceptibility is not None and susceptibility[i] > susc_90:
+        elif susceptibility is not None and not np.isnan(susceptibility[i]) and susceptibility[i] > susc_90:
             is_critical = True
 
         if is_critical:
             regimes[i] = "critical"
-        # Hot regime: high entropy, high volatility, low correlation length
-        elif entropy[i] > ent_75 and volatility[i] > vol_75 and corr_length[i] < corr_25:
+            continue
+
+        # Score-based classification: count how many indicators point hot vs cold
+        # Hot indicators: high entropy, high volatility, low correlation length
+        hot_score = 0
+        cold_score = 0
+
+        if entropy[i] > ent_75:
+            hot_score += 1
+        elif entropy[i] < ent_25:
+            cold_score += 1
+
+        if volatility[i] > vol_75:
+            hot_score += 1
+        elif volatility[i] < vol_25:
+            cold_score += 1
+
+        if corr_length[i] < corr_25:
+            hot_score += 1
+        elif corr_length[i] > corr_75:
+            cold_score += 1
+
+        # Classify: need at least 2 out of 3 indicators to agree
+        if hot_score >= 2:
             regimes[i] = "hot"
-        # Cold regime: low entropy, low volatility, high correlation length
-        elif entropy[i] < ent_25 and volatility[i] < vol_25 and corr_length[i] > corr_75:
+        elif cold_score >= 2:
             regimes[i] = "cold"
-        # Otherwise, transitional/mixed state
         else:
             regimes[i] = "transitional"
 
