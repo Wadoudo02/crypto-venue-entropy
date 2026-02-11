@@ -481,6 +481,7 @@ def plot_free_energy_landscape(
     price_grid: np.ndarray,
     free_energy_2d: np.ndarray,
     times: pd.DatetimeIndex,
+    actual_prices: pd.Series = None,
     title: str = "Free-Energy Landscape Evolution",
 ) -> plt.Figure:
     """Plot 2D heatmap of evolving free-energy landscape.
@@ -493,6 +494,8 @@ def plot_free_energy_landscape(
         2D array of shape (n_times, n_prices).
     times : pd.DatetimeIndex
         Time values (x-axis).
+    actual_prices : pd.Series, optional
+        Actual price series to overlay as path through landscape.
     title : str
         Plot title.
 
@@ -507,6 +510,13 @@ def plot_free_energy_landscape(
         cmap="viridis_r", shading="auto",
     )
     fig.colorbar(im, ax=ax, label="Free Energy (a.u.)")
+
+    # Overlay price path
+    if actual_prices is not None:
+        ax.plot(actual_prices.index, actual_prices.values,
+                color='black', linewidth=2, alpha=0.8, label='Actual Price')
+        ax.legend(loc='upper right')
+
     ax.set_title(title)
     ax.set_xlabel("Time (UTC)")
     ax.set_ylabel("Price (USDT)")
@@ -805,4 +815,214 @@ def plot_entropy_discontinuities(
     fig.suptitle(title, fontsize=14, y=0.995)
     fig.autofmt_xdate()
     fig.tight_layout()
+    return fig
+
+
+def plot_metastable_levels(
+    levels_df: pd.DataFrame,
+    prices: pd.Series,
+    title: str = "Metastable Price Levels Evolution",
+) -> plt.Figure:
+    """Plot detected metastable levels over time with well depth coloring.
+
+    Parameters
+    ----------
+    levels_df : pd.DataFrame
+        DataFrame with columns: timestamp, price_level, well_depth.
+    prices : pd.Series
+        Actual price series for overlay.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    fig, ax = plt.subplots(figsize=(16, 8))
+
+    # Price path
+    ax.plot(prices.index, prices.values, color='grey',
+            linewidth=1, alpha=0.6, label='BTC Price')
+
+    # Metastable levels as scatter
+    scatter = ax.scatter(levels_df['timestamp'],
+                         levels_df['price_level'],
+                         c=levels_df['well_depth'],
+                         s=50, alpha=0.7, cmap='coolwarm',
+                         edgecolors='black', linewidths=0.5)
+
+    fig.colorbar(scatter, ax=ax, label='Well Depth (a.u.)')
+
+    ax.set_xlabel('Time (UTC)')
+    ax.set_ylabel('Price (USDT)')
+    ax.set_title(title)
+    ax.legend(loc='upper right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+    fig.autofmt_xdate()
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_dwell_time_distribution(
+    dwell_times: dict[float, list[float]],
+    title: str = "Dwell Time Distribution at Metastable Levels",
+) -> plt.Figure:
+    """Plot histogram of dwell times with exponential fit.
+
+    Parameters
+    ----------
+    dwell_times : dict
+        Mapping level -> list of dwell times in seconds.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    # Flatten all dwell times
+    all_dwells = []
+    for dwells in dwell_times.values():
+        all_dwells.extend(dwells)
+
+    if len(all_dwells) == 0:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, 'No dwell times detected',
+                ha='center', va='center')
+        return fig
+
+    all_dwells = np.array(all_dwells)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Histogram
+    counts, bins, _ = ax.hist(all_dwells, bins=50, alpha=0.7,
+                              density=True, label='Observed')
+
+    # Exponential fit
+    mean_dwell = all_dwells.mean()
+    lambda_param = 1 / mean_dwell
+    x_fit = np.linspace(all_dwells.min(), all_dwells.max(), 100)
+    y_fit = lambda_param * np.exp(-lambda_param * x_fit)
+    ax.plot(x_fit, y_fit, 'r-', linewidth=2,
+            label=f'Exponential fit (λ={lambda_param:.4f})')
+
+    ax.set_xlabel('Dwell Time (seconds)')
+    ax.set_ylabel('Density')
+    ax.set_title(title)
+    ax.legend()
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_kramers_test(
+    kramers_result: dict,
+    title: str = "Kramers Escape Theory Test",
+) -> plt.Figure:
+    """Plot log(dwell_time) vs barrier/T with linear fit.
+
+    Parameters
+    ----------
+    kramers_result : dict
+        Output from kramers_test() function.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    x = kramers_result['x']
+    y = kramers_result['y']
+
+    if len(x) == 0:
+        ax.text(0.5, 0.5, 'Insufficient data for Kramers test',
+                ha='center', va='center')
+        return fig
+
+    # Scatter
+    ax.scatter(x, y, s=60, alpha=0.7, edgecolors='black', linewidths=0.5)
+
+    # Linear fit
+    slope = kramers_result['slope']
+    intercept = kramers_result['intercept']
+    x_fit = np.linspace(x.min(), x.max(), 100)
+    y_fit = slope * x_fit + intercept
+    ax.plot(x_fit, y_fit, 'r--', linewidth=2,
+            label=f'Fit: slope={slope:.3f}')
+
+    # Correlation annotation
+    corr = kramers_result['correlation']
+    ax.annotate(f'ρ = {corr:.3f}', xy=(0.05, 0.95),
+                xycoords='axes fraction', fontsize=12,
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    ax.set_xlabel('Barrier Height / Temperature')
+    ax.set_ylabel('ln(Dwell Time)')
+    ax.set_title(title)
+    ax.legend()
+    fig.tight_layout()
+
+    return fig
+
+
+def plot_support_resistance_comparison(
+    physics_levels: pd.DataFrame,
+    traditional_levels: list[float],
+    prices: pd.Series,
+    title: str = "Physics-Based vs Traditional Support/Resistance",
+) -> plt.Figure:
+    """Compare physics-identified levels with traditional S/R.
+
+    Parameters
+    ----------
+    physics_levels : pd.DataFrame
+        Metastable levels with timestamp, price_level columns.
+    traditional_levels : list[float]
+        Traditional S/R levels (round numbers, swing points).
+    prices : pd.Series
+        Price series for context.
+    title : str
+        Plot title.
+
+    Returns
+    -------
+    plt.Figure
+        Matplotlib figure.
+    """
+    fig, ax = plt.subplots(figsize=(16, 8))
+
+    # Price path
+    ax.plot(prices.index, prices.values, color='black',
+            linewidth=1.5, alpha=0.8, label='BTC Price')
+
+    # Traditional S/R as horizontal lines
+    for level in traditional_levels:
+        ax.axhline(level, color='red', linestyle='--',
+                   linewidth=1, alpha=0.5)
+    if len(traditional_levels) > 0:
+        ax.axhline(traditional_levels[0], color='red', linestyle='--',
+                   linewidth=1, alpha=0.5, label='Traditional S/R')
+
+    # Physics levels as scatter
+    ax.scatter(physics_levels['timestamp'],
+               physics_levels['price_level'],
+               c='blue', s=30, alpha=0.6, marker='o',
+               label='Physics Metastable Levels')
+
+    ax.set_xlabel('Time (UTC)')
+    ax.set_ylabel('Price (USDT)')
+    ax.set_title(title)
+    ax.legend(loc='upper right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+    fig.autofmt_xdate()
+    fig.tight_layout()
+
     return fig

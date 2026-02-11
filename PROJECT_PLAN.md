@@ -301,21 +301,26 @@ Analysis A is the core of this project. Analysis B is a compelling extension if 
 - [x] Validate: do these regimes correspond to intuitively different market conditions?
 
 **Key findings:**
-- Temperature (volatility): mean 0.000121, max 0.000901 — spikes clearly during Jan 30-31 crash
-- Order parameter (imbalance): range [-0.89, +0.92] — strong imbalances during directional moves
-- Correlation length (|returns| ACF): mean 1.10, max 29.0 lags — 45 spike windows detected
-- Critical slowing down confirmed: high correlation length windows have 1.60× higher forward volatility (corr = +0.045)
-- 63 entropy discontinuities detected (2σ threshold), concentrated around Jan 30-31 crash
-- Regime classification: Hot 9.6%, Cold 9.7%, Critical 10.8%, Transitional 69.9%
-- Regime statistics validate framework: Hot has highest entropy (0.9997) and volatility; Cold has lowest entropy (0.9548) and volatility; Critical has highest correlation length (1.40) and susceptibility (0.30)
-- Transition matrix shows meaningful dynamics: Hot self-persistent at 40.8%, Cold at 27.8%, Critical at 24.0%
+- Temperature (volatility): mean 0.000120, max 0.000895 — spikes clearly during Jan 30-31 and Feb 5-6 crashes
+- Order parameter (imbalance): range [-0.89, +0.92] — strong imbalances during directional moves; requires 30-min smoothing to reveal sustained regime-level structure
+- Susceptibility: partial result — direction consistent with theory but diffuse rather than peaked at critical points; contributes to regime classification but is not a standalone signal
+- Correlation length (integrated autocorrelation time τ_int): mean 5.32, max 38.12 lags — continuous variation across full dataset after switching from threshold-crossing to τ_int methodology
+- Critical slowing down: τ_int correlates with forward volatility at ρ = 0.34 (strongest forward-looking signal in Phase 4); Jan 30 spike (τ_int ≈ 39) larger than Feb 5-6 (τ_int ≈ 21), consistent with first crash being more critical-point-like
+- 63 entropy discontinuities detected (2σ threshold), heavily concentrated around Jan 30-31; notably absent during Feb 5-6 crash, revealing two structurally different crash types: information-driven (Jan 31, low entropy, directional flow) vs mechanical (Feb 5-6, balanced flow, liquidation cascades)
+- Regime classification: Hot 12.0%, Cold 12.5%, Critical 19.6%, Transitional 55.9%
+- Regime statistics validate physics mapping: Hot has highest entropy and volatility; Cold has lowest entropy and volatility; Critical has highest correlation length and susceptibility
+- Regime transitions do not predict higher forward volatility (0.92×) — regime labels capture concurrent state rather than forward-looking predictive power
+- Regime persistence is limited at 5-minute resolution, consistent with markets being driven systems far from equilibrium
 
 **Key implementation notes:**
 - Raw returns have zero autocorrelation (EMH); used absolute returns |r| for correlation length to capture volatility clustering
+- Switched from first-threshold-crossing (ACF < 1/e) to integrated autocorrelation time (τ_int = 0.5 + Σ ACF(k), truncated at first negative ACF) — the standard measure in computational statistical mechanics. This fixed a degenerate distribution problem where 90%+ of windows returned the floor value of 1.0 lag
 - Score-based regime classification (2-of-3 indicators) rather than requiring all 3 conditions simultaneously
+- Correlation length in markets increases with volatility rather than diverging exclusively at critical points (unlike Ising model); the 2-of-3 scoring is robust to this discrepancy
+- Regime timeline plot uses 30-minute majority-vote smoothing for visual clarity; underlying statistics computed at 5-minute resolution
 - Timezone alignment needed between entropy timestamps (tz-naive) and price timestamps (tz-aware UTC)
 
-**Trading implication (realized):** "Correlation length spikes precede volatility increases by 1.60×, providing an early warning signal for regime transitions. The regime classification framework identifies Hot (chaotic), Cold (trending), and Critical (transition) states — an HFT desk could reduce position sizes during Critical periods and increase aggression once the new regime stabilises. The transition matrix quantifies regime persistence and switching probabilities for Markov-chain-based position sizing."
+**Trading implication (realised):** "The integrated autocorrelation time (τ_int) is the strongest forward-looking signal in Phase 4, with ρ = 0.34 to future volatility — sustained elevation serves as an early warning for regime instability. Entropy discontinuities classify the type of transition: information-driven crashes (sharp entropy drops) call for trading with informed flow, while mechanical crashes (entropy near 1.0) call for providing liquidity against forced selling. The regime classification provides a concurrent state descriptor for adaptive strategy selection: Hot favours wide-spread market-making, Cold favours directional strategies, Critical signals caution. The transition matrix quantifies regime persistence for Markov-chain-based position sizing."
 
 **Output:** Notebook 04 — the most novel and physics-heavy notebook, with 4 figures and trading implications throughout.
 
@@ -327,22 +332,22 @@ Analysis A is the core of this project. Analysis B is a compelling extension if 
 **Tasks:**
 
 #### 5a: Free-Energy Landscape Construction
-- [ ] Construct a probability density of prices (or returns) over rolling windows
-- [ ] Define free-energy analogue: F(x) = -kT ln(P(x))
+- [x] Construct a probability density of prices (or returns) over rolling windows
+- [x] Define free-energy analogue: F(x) = -kT ln(P(x))
   - Where P(x) is the empirical probability density at price level x
   - Local minima in F(x) = metastable states (price levels the market "likes")
   - Local maxima (barriers) = price levels the market avoids or passes through quickly
-- [ ] Track how the free-energy landscape evolves over time
-- [ ] Visualise as a 2D heatmap: time on x-axis, price on y-axis, colour = free energy (or probability density)
+- [x] Track how the free-energy landscape evolves over time
+- [x] Visualise as a 2D heatmap: time on x-axis, price on y-axis, colour = free energy (or probability density)
 
 #### 5b: Dwell Time Analysis
-- [ ] For identified metastable levels, compute how long price remains within a band around each level
-- [ ] Compare with exponential distribution (Kramers escape theory: escape time ~ exp(barrier height / temperature))
-- [ ] Does higher "temperature" (volatility) lead to faster escape from metastable levels? (It should.)
+- [x] For identified metastable levels, compute how long price remains within a band around each level
+- [x] Compare with exponential distribution (Kramers escape theory: escape time ~ exp(barrier height / temperature))
+- [x] Does higher "temperature" (volatility) lead to faster escape from metastable levels? (It should.)
 
 #### 5c: Connection to Support/Resistance
-- [ ] Compare physics-identified metastable levels with traditional support/resistance levels
-- [ ] Are they the same? Does the physics framework find levels that traditional methods miss?
+- [x] Compare physics-identified metastable levels with traditional support/resistance levels
+- [x] Are they the same? Does the physics framework find levels that traditional methods miss?
 
 **Trading implication:** "Metastable levels identified by the free-energy landscape correspond to regions where limit order density is high and price reverts. An HFT market-maker could use these levels to place resting orders with higher confidence. When the 'barrier height' decreases (free-energy landscape flattening), it signals the metastable level is weakening and a breakout is more likely."
 
