@@ -37,6 +37,7 @@ Key techniques: Shannon entropy of trade signs, transfer entropy for directional
 ```
 crypto-venue-entropy/
 ├── README.md
+├── report.md                          # Written report
 ├── requirements.txt
 ├── .gitignore
 │
@@ -58,9 +59,7 @@ crypto-venue-entropy/
 │   └── visualisation.py               # Plotting with consistent styling
 │
 ├── data/                              # .gitignored — raw + processed data
-├── figures/                           # Exported key figures
-└── report/
-    └── report.md                      # Written report
+└── figures/                           # Exported key figures
 ```
 
 ## Setup & Reproduction

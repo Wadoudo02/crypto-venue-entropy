@@ -68,7 +68,7 @@ An important caveat: at $k=2$ and $k=3$, the leadership reverses to Bybit. This 
 
 Mutual information peaks at lag = 0 seconds (0.076 bits) and drops 86% within 1 second, confirming that the cross-venue information-sharing timescale is sub-second. Any informational edge from observing one venue's flow must be acted upon within 1-2 seconds.
 
-![Rolling transfer entropy showing Binance-Bybit information flow dynamics](../figures/03_rolling_transfer_entropy.png)
+![Rolling transfer entropy showing Binance-Bybit information flow dynamics](figures/03_rolling_transfer_entropy.png)
 
 ### 3.2 Regime Detection and Phase Transitions
 
@@ -78,7 +78,7 @@ Entropy discontinuity detection reveals 63 first-order-like transitions, heavily
 
 Regime classification using a 2-of-3 scoring system (temperature, entropy, correlation length) assigns clear labels (Hot, Cold, or Critical) to only ~44% of windows; the remaining ~56% are classified as Transitional, reflecting the stringency of requiring two simultaneous extreme-quartile indicators and indicating that markets are far from the clean phase separation of equilibrium systems.
 
-![Correlation length evolution showing critical slowing down before crashes](../figures/04_correlation_length.png)
+![Correlation length evolution showing critical slowing down before crashes](figures/04_correlation_length.png)
 
 ### 3.3 Metastable Price Levels
 
@@ -88,7 +88,7 @@ The value-add over traditional S/R is threefold: (1) quantitative strength via w
 
 Dwell times at metastable levels follow an approximately exponential distribution (median 41 seconds, mean 134.5 seconds, $\lambda = 0.0074$), consistent with a memoryless escape process. Kramers escape theory predicts $\tau \sim \exp(\Delta F / k_BT)$; the empirical correlation between barrier height and log-dwell-time is weak ($\rho = 0.157$), consistent with an externally driven system where liquidation cascades override thermal escape dynamics.
 
-![Free-energy landscape showing metastable price structure](../figures/05_free_energy_landscape.png)
+![Free-energy landscape showing metastable price structure](figures/05_free_energy_landscape.png)
 
 ### 3.4 Two Crashes, Two Mechanisms
 
@@ -112,9 +112,9 @@ This is a crash driven by informed directional trading, with information cascadi
 
 This is a crash driven by liquidation cascades and forced selling, where both sides of the order book are active.
 
-![Entropy discontinuities revealing crash type asymmetry](../figures/04_entropy_discontinuities.png)
+![Entropy discontinuities revealing crash type asymmetry](figures/04_entropy_discontinuities.png)
 
-![Side-by-side crash comparison](../figures/06_crash_comparison.png)
+![Side-by-side crash comparison](figures/06_crash_comparison.png)
 
 ## 4. Trading Implications
 
