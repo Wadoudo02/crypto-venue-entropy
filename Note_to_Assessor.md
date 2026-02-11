@@ -2,7 +2,7 @@
 
 ## What We Aimed For
 
-The original plan was to acquire trade-level data from four venues for the same 7-day period (2026-01-30 to 2026-02-05):
+The original plan was to acquire trade-level data from four venues for the same 7-day period (2026-01-30 to 2026-02-06):
 
 1. **Binance** — BTCUSDT Perpetual Futures (perp-to-perp analysis)
 2. **OKX** — BTC-USDT-SWAP Perpetual Futures (perp-to-perp analysis)

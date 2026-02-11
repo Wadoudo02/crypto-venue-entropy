@@ -6,7 +6,7 @@ Applying entropy measures and phase transition detection to quantify how informa
 
 ## Motivation
 
-Cross-venue price discovery in crypto markets is poorly understood at the microstructure level. This project applies statistical mechanics to 69.4M Binance and 35M Bybit BTC-USDT perpetual futures trades (Jan 30 to Feb 5, 2026) during a major crash period ($84K to $62K), with explicit trading implications for a cross-venue HFT desk.
+Cross-venue price discovery in crypto markets is poorly understood at the microstructure level. This project applies statistical mechanics to 69.4M Binance and 35M Bybit BTC-USDT perpetual futures trades (Jan 30 to Feb 6, 2026) during a major crash period ($84K to $62K), with explicit trading implications for a cross-venue HFT desk.
 
 ## Key Findings
 
