@@ -909,7 +909,8 @@ def plot_dwell_time_distribution(
     y_fit = lambda_param * np.exp(-lambda_param * x_fit)
     ax.plot(x_fit, y_fit, 'r-', linewidth=2,
             label=f'Exponential fit (λ={lambda_param:.4f})')
-
+    #ax.set_xscale('log')
+    ax.set_xlim(0, 2000)  # Focus on typical dwell times
     ax.set_xlabel('Dwell Time (seconds)')
     ax.set_ylabel('Density')
     ax.set_title(title)

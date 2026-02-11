@@ -105,7 +105,14 @@ def find_metastable_levels(
         return np.array([])
 
     if prominence is None:
-        prominence = 0.5 * np.std(free_energy)
+        # Only use populated bins (below the epsilon ceiling) to set prominence.
+        # Empty bins inflate std(F) and suppress real structure detection.
+        F_ceiling = free_energy.max()
+        populated_mask = free_energy < (F_ceiling - 1.0)
+        if populated_mask.sum() > 3:
+            prominence = 0.5 * np.std(free_energy[populated_mask])
+        else:
+            prominence = 0.5 * np.std(free_energy)
 
     # Find minima (peaks of -F)
     minima_indices, properties = find_peaks(-free_energy,
@@ -148,6 +155,7 @@ def rolling_metastable_levels(
         levels = find_metastable_levels(price_grid, F, prominence=prominence)
 
         # Compute well depths
+        F_max = F.max()
         for level_price in levels:
             level_idx = np.argmin(np.abs(price_grid - level_price))
             F_min = F[level_idx]
@@ -156,6 +164,10 @@ def rolling_metastable_levels(
             neighborhood = slice(max(0, level_idx - 5), min(len(F), level_idx + 6))
             F_barrier = F[neighborhood].max()
             well_depth = F_barrier - F_min
+
+            # Skip levels where the "barrier" is just the cliff into empty bins
+            if well_depth > (F_max * 0.8):
+                continue
 
             results.append({
                 'time_idx': i,
@@ -304,8 +316,11 @@ def kramers_test(
         mean_dwell = np.mean(dwells)
 
         # Find barrier for this level (use average of adjacent barriers)
-        relevant_barriers = [b for (l1, l2), b in barriers.items()
-                             if level in (l1, l2)]
+        # Tolerance-based matching (barriers may be keyed by rounded price bins)
+        relevant_barriers = []
+        for (l1, l2), b in barriers.items():
+            if abs(level - l1) <= 500 or abs(level - l2) <= 500:
+                relevant_barriers.append(b)
         if len(relevant_barriers) == 0:
             continue
 
