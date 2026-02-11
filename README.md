@@ -1,14 +1,20 @@
 # crypto-venue-entropy
 
-**Statistical mechanics of cross-venue information flow in crypto perpetual futures markets.**
+**Statistical Mechanics of Cross-Venue Information Flow in Bitcoin Perpetual Futures**
+
+Applying entropy measures and phase transition detection to quantify how information flows between crypto exchanges and when those flow patterns undergo regime shifts.
 
 ## Motivation
 
-Cross-venue price discovery in crypto markets is poorly understood at the microstructure level. This project applies entropy measures and phase transition detection from statistical mechanics to quantify how information flows between exchanges and when those flow patterns undergo regime shifts — with explicit trading implications for a cross-venue HFT desk.
+Cross-venue price discovery in crypto markets is poorly understood at the microstructure level. This project applies statistical mechanics to 69.4M Binance and 35M Bybit BTC-USDT perpetual futures trades (Jan 30 to Feb 5, 2026) during a major crash period ($84K to $62K), with explicit trading implications for a cross-venue HFT desk.
 
 ## Key Findings
 
-*Results will be populated upon completion of the analysis.*
+- **Information leadership:** Transfer entropy reveals Binance leads information flow in 59.4% of 30-minute windows (at $k=1$), resolving a hierarchy invisible to linear cross-correlation. Mutual information drops 86% within 1 second, defining a sub-second exploitation window.
+- **Early warning signal:** The integrated autocorrelation time ($\tau_{\mathrm{int}}$) correlates with 30-minute forward volatility at $\rho = 0.34$; when elevated above the 90th percentile, subsequent volatility is 1.65$\times$ baseline.
+- **Low-entropy signal:** When Binance Shannon entropy drops below the 5th percentile, 88.1% of signals precede |return| > 0.05% within 5 minutes.
+- **Two crash types identified:** Jan 31 crash (entropy collapse, sharp $\tau_{\mathrm{int}}$ spike, clear Binance leadership) is information-driven; Feb 5-6 crash (normal entropy, bidirectional flow, liquidation cascades) is mechanically-driven. Each requires a fundamentally different trading response.
+- **Physics validates traditional S/R:** 98 metastable levels from free-energy landscapes overlap 90% with traditional support/resistance, while adding quantitative well depth (0.8 to 7.5) and temporal evolution that traditional methods lack.
 
 ## Methodology
 
@@ -79,4 +85,4 @@ jupyter lab
 
 ## Author
 
-**Wadoud Charbak**
+**Wadoud Charbak**, MSci Physics, Imperial College London
