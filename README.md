@@ -48,7 +48,8 @@ crypto-venue-entropy/
 │   ├── 03_entropy_analysis.ipynb      # Shannon entropy, transfer entropy
 │   ├── 04_phase_transitions.ipynb     # Regime detection, critical signatures
 │   ├── 05_metastability.ipynb         # Free-energy landscape analysis
-│   └── 06_synthesis.ipynb             # Combined findings and conclusions
+│   ├── 06_synthesis.ipynb             # Combined findings and conclusions
+│   └── 07_out_of_sample_validation.ipynb  # OOS validation on calm period
 │
 ├── src/
 │   ├── __init__.py
@@ -57,7 +58,8 @@ crypto-venue-entropy/
 │   ├── microstructure.py              # Trade flow analysis utilities
 │   ├── phase_transitions.py           # Regime detection framework
 │   ├── metastability.py               # Free-energy landscape analysis
-│   └── visualisation.py               # Plotting with consistent styling
+│   ├── visualisation.py               # Plotting with consistent styling
+│   └── signals.py                     # Trading signal generation (5 signals)
 │
 ├── tests/                             # Pytest test suite
 │   ├── conftest.py                    # Shared fixtures (synthetic data)
@@ -66,7 +68,8 @@ crypto-venue-entropy/
 │   ├── test_microstructure.py
 │   ├── test_phase_transitions.py
 │   ├── test_metastability.py
-│   └── test_visualisation.py
+│   ├── test_visualisation.py
+│   └── test_signals.py
 │
 ├── data/                              # .gitignored — raw + processed data
 └── outputs/
@@ -87,7 +90,7 @@ conda activate crypto-entropy
 # Install dependencies
 pip install -r requirements.txt
 
-# Launch Jupyter and run notebooks in order (01 → 06)
+# Launch Jupyter and run notebooks in order (01 → 07)
 jupyter lab
 ```
 
@@ -107,6 +110,16 @@ pytest tests/test_entropy.py -v
 ```
 
 Tests use small synthetic datasets and complete in under 30 seconds.
+
+## Out-of-Sample Validation
+
+Notebook 07 downloads a calm/ranging week (Feb 15–21, 2026) and replicates the full analysis pipeline to test generalisability. Key questions addressed:
+
+- Do entropy distributions and TE leadership hold outside the crash period?
+- Does the low-entropy signal retain predictive accuracy in calm markets?
+- Do metastable levels on Binance predict Bybit support/resistance with a time lag?
+
+See [07_out_of_sample_validation.ipynb](notebooks/07_out_of_sample_validation.ipynb) for the side-by-side comparison table and honest generalisability assessment.
 
 ## Project Evolution
 
