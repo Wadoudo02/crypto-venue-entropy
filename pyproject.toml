@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: tests requiring external services (LLM, network)",
+    "slow: tests that exceed 2s threshold",
+]
+filterwarnings = [
+    "ignore::numba.core.errors.NumbaDeprecationWarning",
+    "ignore::DeprecationWarning",
+]

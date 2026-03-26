@@ -20,3 +20,7 @@ jupyterlab>=4.0
 
 # Performance (JIT compilation for inner loops)
 numba>=0.58
+
+# Testing
+pytest>=7.4
+pytest-cov>=4.1
