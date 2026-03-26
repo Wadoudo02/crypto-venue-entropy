@@ -37,6 +37,7 @@ Key techniques: Shannon entropy of trade signs, transfer entropy for directional
 ```
 crypto-venue-entropy/
 ├── README.md
+├── LICENSE                            # MIT licence
 ├── report.md                          # Written report
 ├── requirements.txt
 ├── .gitignore
@@ -59,7 +60,8 @@ crypto-venue-entropy/
 │   └── visualisation.py               # Plotting with consistent styling
 │
 ├── data/                              # .gitignored — raw + processed data
-└── figures/                           # Exported key figures
+└── outputs/
+    └── figures/                       # Exported key figures
 ```
 
 ## Setup & Reproduction
@@ -81,6 +83,10 @@ jupyter lab
 ```
 
 **Data note:** Raw trade data is not included in the repository (too large). Run Notebook 01 to download and process the data from Binance's public data repository.
+
+## Project Evolution
+
+*This section will be updated as the project develops beyond its initial scope.*
 
 ## Author
 

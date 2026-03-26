@@ -1,5 +1,9 @@
 # Data files (large, not tracked in version control)
 data/
+*.parquet
+
+# IDE
+.vscode/
 
 # macOS
 .DS_Store
