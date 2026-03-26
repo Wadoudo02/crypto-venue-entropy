@@ -129,3 +129,19 @@ def two_venue_dfs(rng):
     })
 
     return {"source": source_df, "target": target_df}
+
+
+@pytest.fixture
+def sample_net_te_series(rng):
+    """50-element net TE series with two known sign flips.
+
+    Structure: 20 positive (Binance leads), 20 negative (Bybit leads),
+    10 positive (Binance leads again). Flips occur at indices 20 and 40.
+    """
+    return pd.Series(
+        np.concatenate([
+            rng.uniform(0.01, 0.05, 20),
+            rng.uniform(-0.05, -0.01, 20),
+            rng.uniform(0.01, 0.05, 10),
+        ])
+    )
