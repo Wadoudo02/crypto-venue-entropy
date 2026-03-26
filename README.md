@@ -59,6 +59,15 @@ crypto-venue-entropy/
 │   ├── metastability.py               # Free-energy landscape analysis
 │   └── visualisation.py               # Plotting with consistent styling
 │
+├── tests/                             # Pytest test suite
+│   ├── conftest.py                    # Shared fixtures (synthetic data)
+│   ├── test_data.py
+│   ├── test_entropy.py
+│   ├── test_microstructure.py
+│   ├── test_phase_transitions.py
+│   ├── test_metastability.py
+│   └── test_visualisation.py
+│
 ├── data/                              # .gitignored — raw + processed data
 └── outputs/
     └── figures/                       # Exported key figures
@@ -83,6 +92,21 @@ jupyter lab
 ```
 
 **Data note:** Raw trade data is not included in the repository (too large). Run Notebook 01 to download and process the data from Binance's public data repository.
+
+## Testing
+
+```bash
+# Run all tests
+pytest tests/ -v --tb=short
+
+# Run with coverage report
+pytest tests/ -v --cov=src --cov-report=term-missing
+
+# Run a specific module's tests
+pytest tests/test_entropy.py -v
+```
+
+Tests use small synthetic datasets and complete in under 30 seconds.
 
 ## Project Evolution
 
