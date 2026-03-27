@@ -127,7 +127,7 @@ pytest tests/ -v -m integration --backend ollama
 pytest tests/test_entropy.py -v
 ```
 
-171 tests across 9 modules, all unit tests using synthetic data and completing in under 30 seconds. Integration tests (5 additional) require a running LLM backend.
+176 tests across 9 modules (171 unit + 5 integration), all unit tests using synthetic data and completing in under 30 seconds. Integration tests require a running LLM backend.
 
 ## Out-of-Sample Validation
 
@@ -166,7 +166,14 @@ See [09_llm_market_interpreter.ipynb](notebooks/09_llm_market_interpreter.ipynb)
 
 ## Project Evolution
 
-*This section will be updated as the project develops beyond its initial scope.*
+This project began as a 7-day analysis of cross-venue information flow during a BTC crash period. It has since been extended through five phases into a portfolio-grade research project:
+
+- **Phase 0 — Cleanup:** Removed assessment-specific artefacts, migrated figures to `outputs/`, added MIT licence, restructured repo for professional presentation.
+- **Phase 1 — Test suite:** Added 176 tests (171 unit + 5 integration) across 9 test modules with synthetic data fixtures. All unit tests complete in under 30 seconds.
+- **Phase 2 — Out-of-sample validation (Notebook 07):** Downloaded a calm/ranging week (Feb 15–21) and replicated the full pipeline. Key finding: entropy distributions and $\tau_{\mathrm{int}}$ generalise across regimes; TE leadership does not.
+- **Phase 3 — Signal backtesting (Notebook 08):** Built an event-driven backtester with walk-forward validation. Honest result: most signals overfit (70%+ IS→OOS degradation); only the crash type classifier retains positive OOS Sharpe.
+- **Phase 4 — LLM interpreter (Notebook 09):** Integrated an LLM (Anthropic Claude / local Ollama) to translate physics features into natural language regime assessments. 75% rolling accuracy; chain-of-thought prompting reaches 88%; physics framework ablation confirms the mapping adds genuine value.
+- **Phase 5 — Final polish:** Extended `report.md` with sections 7–11 covering all new results, updated limitations, and consolidated trading implications.
 
 ## Author
 
