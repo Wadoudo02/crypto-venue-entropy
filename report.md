@@ -212,6 +212,68 @@ The cross-venue metastability test from Section 5's future directions is now res
 
 **The trading implication is:** entropy thresholds and $\tau_{\mathrm{int}}$ elevation are regime-robust and can be deployed with fixed calibration. TE-based venue selection requires adaptive recalibration (rolling 1–2 day window). Metastable level detection works across venues but produces fewer actionable levels in calm markets — position sizing should scale with the number of active levels.
 
+## 8. Signal Backtesting
+
+Notebook 08 answers the question every interviewer will ask: "Do these signals actually make money?" The answer is nuanced, and the honesty matters more than the P&L.
+
+### Methodology
+
+An event-driven backtester (`src/backtesting.py`) tests each of the five signals from Section 4 with: 2 basis points round-trip transaction costs (realistic for perps on Binance/Bybit), fixed fractional position sizing (1% risk per signal), and a random-entry baseline with matched holding period for each signal. No look-ahead bias: signal thresholds are computed from trailing data only.
+
+### Individual Signal Performance (In-Sample)
+
+| Signal | Trades | Win Rate | Sharpe | Max DD | Profit Factor |
+|--------|--------|----------|--------|--------|---------------|
+| Low entropy | 79 | 31.6% | −42.95 | 0.05% | 0.30 |
+| TE leadership flip | 154 | 46.8% | 3.94 | 0.06% | 1.13 |
+| ACF risk | 34 | 47.1% | −5.39 | 0.06% | 0.76 |
+| Crash type | 30 | 63.3% | 18.61 | 0.03% | 1.50 |
+| Metastable orders | 0 | — | — | — | — |
+
+The crash type classifier is the standout performer: 63.3% win rate, Sharpe of 18.61, and a profit factor of 1.50. The metastable order signal generated zero trades in-sample because well depths never exceeded the threshold during the crash period — a legitimate finding, not a bug. The low-entropy signal performs worst, with a Sharpe of −42.95 despite being the most statistically significant signal in Section 3.
+
+### Combined Strategy
+
+A priority-based combination (crash type > ACF risk > low entropy > TE flip > metastable) produces: **181 trades, Sharpe = 8.55, 53% win rate, profit factor 1.26**. The combined Sharpe of 8.55 is suspiciously high for a 7-day backtest and should be treated with appropriate scepticism.
+
+### Walk-Forward Validation
+
+Rolling 2-day train / 1-day test windows with threshold re-calibration at each fold. The low-entropy signal — the most traded individual signal — shows:
+
+- Mean train Sharpe: −32.84
+- Mean test Sharpe: −21.71
+- Train-to-test degradation: 33.9%
+
+The walk-forward results confirm that signal thresholds optimised in-sample do not transfer cleanly to adjacent periods.
+
+### In-Sample vs Out-of-Sample Degradation
+
+Applying in-sample thresholds to the OOS period (Feb 15–21) from Section 7:
+
+| Signal | IS Sharpe | OOS Sharpe | Degradation | IS Win Rate | OOS Win Rate |
+|--------|-----------|------------|-------------|-------------|--------------|
+| Low entropy | −42.95 | −6.94 | 84% | 31.6% | 34.8% |
+| TE leadership flip | 3.94 | −12.72 | 423% | 46.8% | 40.9% |
+| ACF risk | −5.39 | −1.86 | 66% | 47.1% | 45.5% |
+| Crash type | 18.61 | 5.58 | 70% | 63.3% | 48.5% |
+
+Most signals degrade 70%+ from IS to OOS. The TE flip signal degrades 423%, consistent with the finding in Section 7 that TE leadership does not generalise. The crash type classifier retains a positive OOS Sharpe (5.58) but with substantial degradation from 18.61.
+
+### Sensitivity Analysis
+
+The crash type signal — the most promising — breaks even at approximately 10 bps transaction cost. Below 10 bps it is profitable; above, costs dominate. Sharpe is insensitive to position sizing (constant ratio at all fractions tested), confirming that the signal's edge is in timing, not leverage.
+
+### Honest Assessment
+
+The backtest results are mediocre, and that is reported transparently:
+
+- **Most signals overfit.** The 70%+ IS→OOS degradation across all signals suggests that threshold calibration on a 7-day crash period captures noise, not structure. The low-entropy signal — the most statistically significant feature in Section 3 — is the worst performer in the backtest.
+- **The combined IS Sharpe of 8.55 is not credible** as a forward-looking estimate. It benefits from correlated signals reinforcing each other on the same crash events.
+- **The crash type classifier has genuine signal** but degrades 70% OOS. A Sharpe of 5.58 in the OOS period, while positive, is based on only 33 trades — far too few to draw robust conclusions.
+- **Practical barriers remain:** sub-second execution latency required for entropy-based signals, data pipeline reliability for real-time feature computation, and the fundamental challenge that the most actionable signals (crash detection) fire during the most volatile and illiquid periods.
+
+**The trading implication is:** the backtesting methodology and honest overfitting assessment are the deliverables, not the P&L numbers. Only the crash type classifier shows genuine (though degraded) OOS alpha. Signals need stricter regularisation, longer evaluation windows (minimum 3 months across multiple regimes), and realistic execution modelling before any deployment consideration.
+
 ## Personal Note
 
 This project was a lot of fun! I really wanted to encorporate my background and love for Physics as well as my deep interest in Quantitative Research into one project together. I feel this project certainly gave me a glimpse into the world where this is possible. 
