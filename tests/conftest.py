@@ -5,6 +5,21 @@ import pandas as pd
 import pytest
 
 
+# ---------------------------------------------------------------------------
+# CLI options
+# ---------------------------------------------------------------------------
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--backend",
+        action="store",
+        default="anthropic",
+        choices=["anthropic", "ollama"],
+        help="LLM backend for integration tests: anthropic (primary) or ollama (fallback)",
+    )
+
+
 @pytest.fixture
 def rng():
     return np.random.default_rng(42)
@@ -180,3 +195,66 @@ def sample_signals_df():
         "signal_type": ["low_entropy", "te_flip", "low_entropy"],
         "direction": [1, -1, 1],
     })
+
+
+# ---------------------------------------------------------------------------
+# LLM interpreter fixtures (Phase 4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def backend_name(request):
+    """Return the selected LLM backend name from --backend CLI option."""
+    return request.config.getoption("--backend")
+
+
+@pytest.fixture
+def sample_market_snapshot():
+    """A calm-period MarketSnapshot with known properties."""
+    from src.llm_interpreter import MarketSnapshot
+
+    return MarketSnapshot(
+        timestamp="2026-02-03T10:00:00Z",
+        binance_entropy=0.991,
+        bybit_entropy=0.987,
+        binance_entropy_percentile=72.0,
+        net_transfer_entropy=0.0003,
+        te_leader="binance",
+        te_leader_consecutive_windows=1,
+        acf_time=1.2,
+        acf_time_percentile=35.0,
+        acf_trailing_median=1.5,
+        realised_vol_30m=0.0015,
+        order_imbalance=0.02,
+        susceptibility=0.003,
+        nearest_metastable_level=84500.0,
+        nearest_well_depth=6.2,
+        price=84550.0,
+        return_5m=0.0002,
+    )
+
+
+@pytest.fixture
+def sample_crisis_snapshot():
+    """A crisis-period MarketSnapshot matching the Jan 31 info-driven crash."""
+    from src.llm_interpreter import MarketSnapshot
+
+    return MarketSnapshot(
+        timestamp="2026-01-31T14:30:00Z",
+        binance_entropy=0.61,
+        bybit_entropy=0.78,
+        binance_entropy_percentile=2.0,
+        net_transfer_entropy=0.015,
+        te_leader="binance",
+        te_leader_consecutive_windows=4,
+        acf_time=4.8,
+        acf_time_percentile=97.0,
+        acf_trailing_median=1.5,
+        realised_vol_30m=0.025,
+        order_imbalance=-0.35,
+        susceptibility=0.018,
+        nearest_metastable_level=78200.0,
+        nearest_well_depth=1.3,
+        price=79100.0,
+        return_5m=-0.008,
+    )
