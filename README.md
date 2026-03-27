@@ -49,7 +49,8 @@ crypto-venue-entropy/
 │   ├── 04_phase_transitions.ipynb     # Regime detection, critical signatures
 │   ├── 05_metastability.ipynb         # Free-energy landscape analysis
 │   ├── 06_synthesis.ipynb             # Combined findings and conclusions
-│   └── 07_out_of_sample_validation.ipynb  # OOS validation on calm period
+│   ├── 07_out_of_sample_validation.ipynb  # OOS validation on calm period
+│   └── 08_signal_backtesting.ipynb       # Signal backtesting and validation
 │
 ├── src/
 │   ├── __init__.py
@@ -59,7 +60,8 @@ crypto-venue-entropy/
 │   ├── phase_transitions.py           # Regime detection framework
 │   ├── metastability.py               # Free-energy landscape analysis
 │   ├── visualisation.py               # Plotting with consistent styling
-│   └── signals.py                     # Trading signal generation (5 signals)
+│   ├── signals.py                     # Trading signal generation (5 signals)
+│   └── backtesting.py                 # Event-driven signal backtester
 │
 ├── tests/                             # Pytest test suite
 │   ├── conftest.py                    # Shared fixtures (synthetic data)
@@ -69,7 +71,8 @@ crypto-venue-entropy/
 │   ├── test_phase_transitions.py
 │   ├── test_metastability.py
 │   ├── test_visualisation.py
-│   └── test_signals.py
+│   ├── test_signals.py
+│   └── test_backtesting.py
 │
 ├── data/                              # .gitignored — raw + processed data
 └── outputs/
@@ -90,7 +93,7 @@ conda activate crypto-entropy
 # Install dependencies
 pip install -r requirements.txt
 
-# Launch Jupyter and run notebooks in order (01 → 07)
+# Launch Jupyter and run notebooks in order (01 → 08)
 jupyter lab
 ```
 
@@ -109,7 +112,7 @@ pytest tests/ -v --cov=src --cov-report=term-missing
 pytest tests/test_entropy.py -v
 ```
 
-Tests use small synthetic datasets and complete in under 30 seconds.
+149 tests across 8 modules, all using synthetic data and completing in under 30 seconds.
 
 ## Out-of-Sample Validation
 
@@ -120,6 +123,18 @@ Notebook 07 downloads a calm/ranging week (Feb 15–21, 2026) and replicates the
 - Do metastable levels on Binance predict Bybit support/resistance with a time lag?
 
 See [07_out_of_sample_validation.ipynb](notebooks/07_out_of_sample_validation.ipynb) for the side-by-side comparison table and honest generalisability assessment.
+
+## Signal Backtesting
+
+Notebook 08 tests whether the 5 entropy-based signals actually generate tradeable alpha using a lightweight event-driven backtester:
+
+- **Individual signal performance:** Each signal backtested with random-entry baseline comparison, reporting Sharpe ratio, win rate, max drawdown, and profit factor
+- **Combined strategy:** Priority-based signal hierarchy (crash type > ACF risk > low entropy > TE flip > metastable)
+- **Walk-forward validation:** 2-day train / 1-day test rolling windows with threshold re-calibration to prevent overfitting; IS→OOS critical test
+- **Sensitivity analysis:** Parameter sweeps for entropy percentile, transaction costs (breakeven identification), and position sizing
+- **Honest assessment:** IS vs OOS degradation ratios, overfitting detection, practical barriers to live implementation
+
+See [08_signal_backtesting.ipynb](notebooks/08_signal_backtesting.ipynb) for the full analysis and honest narrative on what works and what doesn't.
 
 ## Project Evolution
 
