@@ -145,3 +145,38 @@ def sample_net_te_series(rng):
             rng.uniform(0.01, 0.05, 10),
         ])
     )
+
+
+@pytest.fixture
+def sample_price_series():
+    """200-bar price series at 5-min resolution with known trend/reversal.
+
+    Bars 0-99: linear uptrend 100 → 110.
+    Bars 100-199: linear downtrend 110 → 100.
+    """
+    n = 200
+    timestamps = pd.date_range(
+        "2026-01-30 12:00:00", periods=n, freq="5min", tz="UTC"
+    )
+    up = np.linspace(100, 110, 100)
+    down = np.linspace(110, 100, 100)
+    prices = np.concatenate([up, down])
+    return pd.Series(prices, index=timestamps)
+
+
+@pytest.fixture
+def sample_signals_df():
+    """3 signals at known timestamps with known directions.
+
+    Signal 1: long at bar 10 (price ~105.05)
+    Signal 2: short at bar 60 (price ~106.06)
+    Signal 3: long at bar 150 (price ~105.05 on downtrend)
+    """
+    timestamps = pd.date_range(
+        "2026-01-30 12:00:00", periods=200, freq="5min", tz="UTC"
+    )
+    return pd.DataFrame({
+        "timestamp": [timestamps[10], timestamps[60], timestamps[150]],
+        "signal_type": ["low_entropy", "te_flip", "low_entropy"],
+        "direction": [1, -1, 1],
+    })
