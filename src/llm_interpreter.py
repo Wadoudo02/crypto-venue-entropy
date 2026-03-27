@@ -43,7 +43,7 @@ class _NumpyEncoder(json.JSONEncoder):
 
 DEFAULT_PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "market_interpreter_v1.md"
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
-DEFAULT_OLLAMA_MODEL = "llama3.1"
+DEFAULT_OLLAMA_MODEL = "llama3.1:8b"
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 
 VALID_REGIMES = {"calm", "transitional", "crisis_information", "crisis_mechanical"}
@@ -294,7 +294,7 @@ class OllamaBackend(LLMBackend):
     Parameters
     ----------
     model : str
-        Ollama model name (default: llama3.1).
+        Ollama model name (default: llama3.1:8b).
     base_url : str
         Ollama server URL (default: http://localhost:11434).
     """
