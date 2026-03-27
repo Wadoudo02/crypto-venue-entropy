@@ -39,6 +39,7 @@ class BacktestResult:
     equity_curve: pd.Series
     total_pnl: float
     sharpe_ratio: float
+    raw_sharpe_ratio: float
     max_drawdown: float
     win_rate: float
     avg_win: float
@@ -53,7 +54,8 @@ class BacktestResult:
             "=" * 40,
             f"Total trades:    {self.num_trades}",
             f"Total PnL:       {self.total_pnl:,.2f}",
-            f"Sharpe ratio:    {self.sharpe_ratio:.3f}",
+            f"Sharpe (ann.):   {self.sharpe_ratio:.3f}",
+            f"Sharpe (raw):    {self.raw_sharpe_ratio:.3f}",
             f"Max drawdown:    {self.max_drawdown:.2%}",
             f"Win rate:        {self.win_rate:.2%}",
             f"Avg win:         {self.avg_win:,.2f}",
@@ -103,6 +105,24 @@ def compute_sharpe_ratio(
             periods_per_year = 252  # default to daily
 
     return float(returns.mean() / returns.std() * np.sqrt(periods_per_year))
+
+
+def compute_raw_sharpe_ratio(equity_curve: pd.Series) -> float:
+    """Un-scaled Sharpe ratio: mean(returns) / std(returns), no annualisation.
+
+    More honest than the annualised version when the sample covers only
+    a few days of high-frequency data.
+
+    Returns 0.0 when there are fewer than 2 observations or zero variance.
+    """
+    if len(equity_curve) < 2:
+        return 0.0
+
+    returns = equity_curve.pct_change().dropna()
+    if len(returns) < 1 or returns.std() == 0:
+        return 0.0
+
+    return float(returns.mean() / returns.std())
 
 
 def compute_max_drawdown(equity_curve: pd.Series) -> float:
@@ -314,6 +334,7 @@ class SignalBacktester:
             equity_curve=equity_curve,
             total_pnl=equity - self.initial_equity,
             sharpe_ratio=compute_sharpe_ratio(equity_curve),
+            raw_sharpe_ratio=compute_raw_sharpe_ratio(equity_curve),
             max_drawdown=compute_max_drawdown(equity_curve),
             **metrics,
         )
@@ -371,6 +392,7 @@ def random_baseline(
             equity_curve=equity_curve,
             total_pnl=0.0,
             sharpe_ratio=0.0,
+            raw_sharpe_ratio=0.0,
             max_drawdown=0.0,
             win_rate=0.0,
             avg_win=0.0,

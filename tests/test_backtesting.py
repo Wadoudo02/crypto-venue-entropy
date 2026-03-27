@@ -80,19 +80,22 @@ class TestBacktestResult:
     def test_summary_format(self):
         r = BacktestResult(
             trades=[], equity_curve=pd.Series([100_000]),
-            total_pnl=0.0, sharpe_ratio=0.0, max_drawdown=0.0,
+            total_pnl=0.0, sharpe_ratio=0.0, raw_sharpe_ratio=0.0,
+            max_drawdown=0.0,
             win_rate=0.0, avg_win=0.0, avg_loss=0.0,
             profit_factor=0.0, num_trades=0,
         )
         s = r.summary()
         assert "Backtest Summary" in s
         assert "Total trades" in s
-        assert "Sharpe ratio" in s
+        assert "Sharpe (ann.)" in s
+        assert "Sharpe (raw)" in s
 
     def test_summary_no_trades(self):
         r = BacktestResult(
             trades=[], equity_curve=pd.Series([100_000]),
-            total_pnl=0.0, sharpe_ratio=0.0, max_drawdown=0.0,
+            total_pnl=0.0, sharpe_ratio=0.0, raw_sharpe_ratio=0.0,
+            max_drawdown=0.0,
             win_rate=0.0, avg_win=0.0, avg_loss=0.0,
             profit_factor=0.0, num_trades=0,
         )
