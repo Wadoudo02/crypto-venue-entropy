@@ -5,9 +5,6 @@ data/
 # IDE
 .vscode/
 
-# Project planning (local only)
-entropy_project_upgrade_plan.md
-
 # macOS
 .DS_Store
 
