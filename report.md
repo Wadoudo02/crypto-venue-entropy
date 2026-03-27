@@ -180,6 +180,38 @@ The LLM interpreter is not a replacement for the quantitative signals. It is a t
 
 Where the LLM does *not* add value: speed (seconds per assessment vs microseconds for rule-based signals), cost (non-zero for cloud APIs), and consistency (inherent stochasticity in LLM outputs). For sub-second trading decisions, the quantitative signals from `src/signals.py` remain the operational layer; the LLM provides the interpretive context around them.
 
+## 7. Out-of-Sample Validation
+
+The original analysis (Sections 1–6) is conditioned on a single 7-day bearish window. To test whether the statistical mechanics framework generalises beyond crash-regime data, Notebook 07 replicates the full analysis pipeline on an independent calm/ranging period: **Feb 15–21, 2026** (BTC consolidating near $96K–$98K, no major directional moves).
+
+### Side-by-Side Comparison
+
+| Metric | Original (Jan 30 – Feb 6) | OOS (Feb 15–21) | Verdict |
+|--------|---------------------------|------------------|---------|
+| Binance mean entropy $H$ | 0.989 | 0.980 | Generalises |
+| 5th percentile entropy | 0.59 | 0.925 | Regime-dependent (no extreme lows in calm market) |
+| Binance leadership at $k=1$ | 59.4% | 48.7% | Does **not** generalise |
+| MI 1-second decay | 86% | 86.7% | Generalises |
+| $\tau_{\mathrm{int}}$ vs forward volatility ($\rho$) | 0.34 | 0.416 | Generalises (stronger in OOS) |
+| Metastable levels found | 98 | 11 | Fewer in calm market |
+| Cross-venue level overlap | — | 100% (11/11) | Strong overlap |
+
+### What Generalises and What Doesn't
+
+**Entropy distributions generalise.** The mean Shannon entropy is nearly identical across regimes (0.989 vs 0.980), confirming that entropy-based thresholds calibrated on the crash period remain valid in calm markets. However, the 5th-percentile entropy rises from 0.59 to 0.925 in the OOS period — the extreme lows that trigger the low-entropy signal simply do not occur in ranging markets.
+
+**Critical slowing down generalises — and strengthens.** The correlation between integrated autocorrelation time and forward volatility is $\rho = 0.416$ in the OOS period vs $\rho = 0.34$ in the original, suggesting that $\tau_{\mathrm{int}}$ elevation is a robust early-warning signal across market regimes.
+
+**Transfer entropy leadership does not generalise.** Binance leadership drops from 59.4% to 48.7% in the OOS period, effectively a coin flip. This means TE-based venue selection must be adaptive — recalibrated on a rolling basis — rather than using a static "Binance leads" assumption.
+
+**Metastable levels are regime-dependent in quantity but not quality.** The free-energy framework identifies 11 levels in the calm period vs 98 during the crash. Fewer structural features form in low-volatility environments. However, every level identified on Binance was also found on Bybit (100% cross-venue overlap), and the mean detection lag between venues was only −5 seconds — near-simultaneous. Binance detected levels first in 3 of 11 cases.
+
+### Cross-Venue Metastability
+
+The cross-venue metastability test from Section 5's future directions is now resolved: metastable levels are **not** venue-specific. All 11 OOS levels appeared on both Binance and Bybit with negligible temporal lag. This validates using a single venue's free-energy landscape as a proxy for the broader market's structural features, simplifying deployment for a cross-venue desk.
+
+**The trading implication is:** entropy thresholds and $\tau_{\mathrm{int}}$ elevation are regime-robust and can be deployed with fixed calibration. TE-based venue selection requires adaptive recalibration (rolling 1–2 day window). Metastable level detection works across venues but produces fewer actionable levels in calm markets — position sizing should scale with the number of active levels.
+
 ## Personal Note
 
 This project was a lot of fun! I really wanted to encorporate my background and love for Physics as well as my deep interest in Quantitative Research into one project together. I feel this project certainly gave me a glimpse into the world where this is possible. 
