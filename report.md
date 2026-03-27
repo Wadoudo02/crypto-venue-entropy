@@ -274,6 +274,121 @@ The backtest results are mediocre, and that is reported transparently:
 
 **The trading implication is:** the backtesting methodology and honest overfitting assessment are the deliverables, not the P&L numbers. Only the crash type classifier shows genuine (though degraded) OOS alpha. Signals need stricter regularisation, longer evaluation windows (minimum 3 months across multiple regimes), and realistic execution modelling before any deployment consideration.
 
+## 9. LLM Evaluation Results
+
+Section 6 describes the LLM interpreter's design. This section reports the quantitative evaluation from Notebook 09.
+
+### Regime Classification Accuracy
+
+**Single-snapshot demonstration (4 hand-picked regimes):** 100% accuracy. The interpreter correctly identifies calm (88% confidence), information-driven crisis (92%), mechanical crisis (85%), and transitional (35%) regimes. The low confidence on transitional is correct behaviour — ~56% of windows in the original data were transitional precisely because of mixed signals.
+
+**Rolling window evaluation (20 assessments across all regimes):** 75% overall accuracy (15/20 correct).
+
+| Regime | Accuracy | Notes |
+|--------|----------|-------|
+| Calm | 100% (5/5) | Correctly identified in all cases |
+| Crisis (information-driven) | 100% (5/5) | High-confidence, no misclassifications |
+| Crisis (mechanical) | 0% (0/5) | Misclassified as transitional |
+| Transitional | 100% (5/5) | Correctly identified with low confidence |
+
+The mechanical crisis blind spot is the most important finding. The LLM systematically misclassifies mechanical crises as transitional, likely because the feature signature (normal entropy, bidirectional TE) overlaps with genuine transitional periods. This is a failure mode that requires a rule-based fallback: if liquidation volume exceeds a threshold, override the LLM's classification.
+
+### Prompting Strategy Comparison
+
+| Strategy | Accuracy | Mean Confidence | Mean Latency (s) |
+|----------|----------|-----------------|-------------------|
+| Zero-shot | 50% | 55% | 28.2 |
+| Few-shot | 75% | 65% | 32.8 |
+| Chain-of-thought | 88% | 72% | 34.1 |
+| Ablation (no physics) | 50% | 66% | 25.3 |
+
+Chain-of-thought prompting achieves the highest accuracy (88%), confirming that explicit reasoning steps improve regime classification. The ablation — removing the physics-to-finance mapping and providing only raw feature values — drops accuracy to 50% (coin flip). This is the strongest evidence that the statistical mechanics framework adds genuine interpretive value: the LLM cannot classify regimes from feature magnitudes alone.
+
+### Backend Comparison
+
+| Backend | Accuracy | Mean Confidence | Mean Latency (s) | Cost per Assessment |
+|---------|----------|-----------------|-------------------|---------------------|
+| Anthropic (Claude) | 75% | 66% | 30.4 | $0.026 |
+| Ollama (local) | 75% | 72% | 26.5 | $0.00 |
+
+The local Ollama backend matches the cloud API in accuracy and is 20% faster. This enables deployment without external API dependency or data egress — a meaningful advantage for firms with data sovereignty requirements.
+
+### Consistency and Contradiction Handling
+
+Running the same crisis snapshot 5 times produces identical outputs: regime = crisis_information, confidence = 92%, with zero variance. The LLM is deterministic on high-confidence inputs.
+
+On transitional snapshots with conflicting features, the interpreter correctly identifies contradictions (e.g., "entropy suggests directional pressure but ACF time is below median"), lists them explicitly in the output, and lowers confidence to 35%. This is the designed behaviour from the system prompt's contradictory signal handling rules.
+
+### Cost and Latency
+
+At Anthropic pricing: ~4,558 input tokens + ~800 output tokens per assessment = **$0.026 per assessment**. At one assessment every 30 minutes: $1.23/day, $37/month. Ollama is free. Mean latency is 30.4 seconds (Anthropic) and 26.5 seconds (Ollama) — appropriate for 30-minute rolling assessments, not for sub-second trading decisions.
+
+**The trading implication is:** the LLM interpreter adds most value in transitional periods (56% of windows), where conflicting signals require narrative synthesis that rule-based systems cannot provide. The mechanical crisis blind spot (0% accuracy) requires a rule-based override — if liquidation volume or cascading stop signatures are detected, bypass the LLM and escalate directly. For deployment, Ollama provides equivalent accuracy at zero cost with no data egress.
+
+## 10. Updated Limitations and Future Work
+
+The original limitations from Section 5 remain, with several now partially addressed and new ones identified:
+
+### Revised Limitations
+
+- **Single crash period — partially addressed.** The OOS validation (Section 7) extends coverage to a calm/ranging regime. The core framework (entropy, $\tau_{\mathrm{int}}$) generalises, but TE leadership and signal thresholds do not. A minimum of 3 months across multiple regimes is needed for production confidence.
+
+- **Signal overfitting is severe.** Most signals degrade 70%+ from in-sample to out-of-sample (Section 8). The low-entropy signal — the most statistically significant feature — is the worst backtesting performer. Statistical significance does not imply tradeable alpha.
+
+- **LLM blind spot on mechanical crises.** The interpreter achieves 0% accuracy on mechanical crashes (Section 9), misclassifying them as transitional. The feature overlap between these regimes (normal entropy, bidirectional TE) makes LLM-based disambiguation unreliable without supplementary liquidation data.
+
+- **TE leadership is regime-dependent.** Binance leadership at $k=1$ drops from 59.4% to 48.7% across regimes (Section 7). Any TE-based strategy must use adaptive, rolling calibration rather than static thresholds.
+
+- **Metastable level count varies dramatically.** From 98 levels during the crash to 11 in the calm period (Section 7). The free-energy framework works in both regimes but provides far fewer actionable levels in low-volatility environments.
+
+- **Equilibrium framework, transfer entropy history-length sensitivity, regime classification ambiguity, and resolution floor** — all original limitations from Section 5 remain unchanged.
+
+### Updated Future Directions
+
+- **Longer evaluation windows** (minimum 3 months, ideally 12) across bull, bear, and ranging regimes to establish genuine signal robustness.
+- **Mechanical crisis detection heuristic** as a rule-based fallback for the LLM: liquidation volume thresholds, cascading stop-loss signatures, and funding rate spikes that distinguish mechanical from transitional periods.
+- **Adaptive TE leadership thresholds** recalibrated on a rolling 1–2 day window, replacing the static $k=1$ leadership assumption.
+- **Sub-second data** to resolve the information propagation timescale below the 1-second floor, where 86% of cross-venue MI is absorbed.
+- **Regularised signal calibration** using cross-validated or Bayesian threshold selection rather than fixed percentile cutoffs, to mitigate the IS→OOS degradation observed in Section 8.
+
+## 11. Consolidated Trading Implications
+
+Sections 4, 7, and 8 each contribute partial views of signal viability. This section consolidates all five signals with their OOS validation status and deployment readiness.
+
+### Signal Deployment Readiness
+
+| Signal | IS Sharpe | OOS Sharpe | OOS Validated? | Deployment Readiness |
+|--------|-----------|------------|----------------|----------------------|
+| Low entropy | −42.95 | −6.94 | No — negative OOS Sharpe | Not deployable; threshold calibration overfits |
+| TE leadership flip | 3.94 | −12.72 | No — severe degradation | Not deployable; TE leadership regime-dependent |
+| ACF risk | −5.39 | −1.86 | No — negative in both | Not deployable; signal concept sound but execution fails |
+| Crash type classifier | 18.61 | 5.58 | Partially — positive but degraded 70% | Cautiously deployable with wider stops and longer evaluation |
+| Metastable orders | — | — | Untested — zero trades in both periods | Framework valid; needs higher-volatility regime to trigger |
+
+### What Survived and What Didn't
+
+**One signal partially survived:** the crash type classifier retains a positive OOS Sharpe (5.58) but degrades 70% from in-sample. It is the only signal with a legitimate claim to tradeable alpha, though 33 OOS trades is insufficient for statistical confidence.
+
+**Four signals did not survive.** The low-entropy, TE flip, and ACF risk signals all produce negative OOS Sharpes. The metastable order signal never fires because well depths are insufficient in both test periods. These are genuine negative results, not bugs.
+
+### How the LLM Complements Quantitative Signals
+
+The LLM interpreter does not generate trading signals — it translates them. Its value lies in:
+
+1. **Transitional regime synthesis:** In the 56% of windows where quantitative signals conflict, the LLM produces a coherent narrative with explicit uncertainty quantification (confidence scores, conflicting signal lists).
+2. **Portfolio manager communication:** Risk committees and non-technical stakeholders can consume natural language briefings without parsing transfer entropy values.
+3. **Audit trail:** Every regime assessment includes a structured JSON record of features, reasoning, and recommendations — useful for post-trade analysis and compliance.
+
+### Practical Deployment Architecture
+
+For a cross-venue HFT desk, the recommended architecture separates speed layers:
+
+- **Sub-second layer:** Rule-based signals from `src/signals.py` for crash type detection and $\tau_{\mathrm{int}}$ alerts. No LLM in the critical path.
+- **30-minute layer:** LLM regime assessments via Ollama (local, zero-cost, 26.5s latency) for position-level risk management and portfolio manager briefings.
+- **Mechanical crisis override:** If liquidation volume exceeds threshold, bypass LLM classification and escalate to crisis protocol directly. This addresses the 0% mechanical crisis accuracy.
+
+**The trading implication is:** of the five signals proposed in this project, only the crash type classifier shows genuine OOS alpha, and even that degrades substantially. The primary deliverable is not a profitable trading strategy — it is a validated analytical framework that correctly identifies two distinct crash mechanisms, provides a robust early-warning signal ($\tau_{\mathrm{int}}$), and translates complex physics-derived features into actionable intelligence via an LLM layer. The framework's value is in risk management and regime awareness, not in standalone alpha generation.
+
 ## Personal Note
 
 This project was a lot of fun! I really wanted to encorporate my background and love for Physics as well as my deep interest in Quantitative Research into one project together. I feel this project certainly gave me a glimpse into the world where this is possible. 
