@@ -24,3 +24,6 @@ numba>=0.58
 # Testing
 pytest>=7.4
 pytest-cov>=4.1
+
+# LLM backends (Phase 4)
+anthropic>=0.40.0
