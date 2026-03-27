@@ -23,7 +23,7 @@ import requests
 # ---------------------------------------------------------------------------
 
 DEFAULT_PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "market_interpreter_v1.md"
-DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_OLLAMA_MODEL = "llama3.1"
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 
