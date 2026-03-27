@@ -15,7 +15,26 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
+import numpy as np
 import requests
+
+
+# ---------------------------------------------------------------------------
+# Numpy-safe JSON encoder
+# ---------------------------------------------------------------------------
+
+
+class _NumpyEncoder(json.JSONEncoder):
+    """Handles numpy int/float types that the default encoder rejects."""
+
+    def default(self, o):
+        if isinstance(o, (np.integer,)):
+            return int(o)
+        if isinstance(o, (np.floating,)):
+            return float(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return super().default(o)
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +84,7 @@ class MarketSnapshot:
 
     def to_json(self) -> str:
         """Serialise to a JSON string."""
-        return json.dumps(asdict(self), indent=2)
+        return json.dumps(asdict(self), indent=2, cls=_NumpyEncoder)
 
     @classmethod
     def from_dict(cls, d: dict) -> "MarketSnapshot":
@@ -96,7 +115,7 @@ class RegimeAssessment:
 
     def to_json(self) -> str:
         """Serialise to a JSON string."""
-        return json.dumps(asdict(self), indent=2)
+        return json.dumps(asdict(self), indent=2, cls=_NumpyEncoder)
 
     @classmethod
     def from_json(cls, text: str) -> "RegimeAssessment":
