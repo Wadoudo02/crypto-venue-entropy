@@ -50,7 +50,8 @@ crypto-venue-entropy/
 │   ├── 05_metastability.ipynb         # Free-energy landscape analysis
 │   ├── 06_synthesis.ipynb             # Combined findings and conclusions
 │   ├── 07_out_of_sample_validation.ipynb  # OOS validation on calm period
-│   └── 08_signal_backtesting.ipynb       # Signal backtesting and validation
+│   ├── 08_signal_backtesting.ipynb       # Signal backtesting and validation
+│   └── 09_llm_market_interpreter.ipynb   # LLM regime assessment and evaluation
 │
 ├── src/
 │   ├── __init__.py
@@ -61,7 +62,8 @@ crypto-venue-entropy/
 │   ├── metastability.py               # Free-energy landscape analysis
 │   ├── visualisation.py               # Plotting with consistent styling
 │   ├── signals.py                     # Trading signal generation (5 signals)
-│   └── backtesting.py                 # Event-driven signal backtester
+│   ├── backtesting.py                 # Event-driven signal backtester
+│   └── llm_interpreter.py            # LLM market state interpreter (dual backend)
 │
 ├── tests/                             # Pytest test suite
 │   ├── conftest.py                    # Shared fixtures (synthetic data)
@@ -72,11 +74,16 @@ crypto-venue-entropy/
 │   ├── test_metastability.py
 │   ├── test_visualisation.py
 │   ├── test_signals.py
-│   └── test_backtesting.py
+│   ├── test_backtesting.py
+│   └── test_llm_interpreter.py
+│
+├── prompts/
+│   └── market_interpreter_v1.md      # LLM system prompt (versioned)
 │
 ├── data/                              # .gitignored — raw + processed data
 └── outputs/
-    └── figures/                       # Exported key figures
+    ├── figures/                       # Exported key figures
+    └── llm_reports/                   # LLM-generated market briefings
 ```
 
 ## Setup & Reproduction
@@ -93,26 +100,34 @@ conda activate crypto-entropy
 # Install dependencies
 pip install -r requirements.txt
 
-# Launch Jupyter and run notebooks in order (01 → 08)
+# Launch Jupyter and run notebooks in order (01 → 09)
 jupyter lab
 ```
 
 **Data note:** Raw trade data is not included in the repository (too large). Run Notebook 01 to download and process the data from Binance's public data repository.
 
+**LLM backends for Notebook 09:**
+- **Anthropic API (primary):** Set the `ANTHROPIC_API_KEY` environment variable. Best accuracy.
+- **Local Ollama (fallback):** Install [Ollama](https://ollama.ai), then `ollama pull llama3.1`. Free, no data leaves your machine.
+- Notebook 09 works with either backend and gracefully degrades if neither is available.
+
 ## Testing
 
 ```bash
-# Run all tests
+# Run all unit tests (no LLM needed)
 pytest tests/ -v --tb=short
 
 # Run with coverage report
 pytest tests/ -v --cov=src --cov-report=term-missing
 
+# Run LLM integration tests (requires active backend)
+pytest tests/ -v -m integration --backend ollama
+
 # Run a specific module's tests
 pytest tests/test_entropy.py -v
 ```
 
-149 tests across 8 modules, all using synthetic data and completing in under 30 seconds.
+171 tests across 9 modules, all unit tests using synthetic data and completing in under 30 seconds. Integration tests (5 additional) require a running LLM backend.
 
 ## Out-of-Sample Validation
 
@@ -135,6 +150,19 @@ Notebook 08 tests whether the 5 entropy-based signals actually generate tradeabl
 - **Honest assessment:** IS vs OOS degradation ratios, overfitting detection, practical barriers to live implementation
 
 See [08_signal_backtesting.ipynb](notebooks/08_signal_backtesting.ipynb) for the full analysis and honest narrative on what works and what doesn't.
+
+## LLM Market State Interpreter
+
+Notebook 09 integrates an LLM (Anthropic Claude or local Ollama) to translate physics-derived features into natural language regime assessments with structured trading recommendations:
+
+- **Dual backend architecture:** Anthropic API (primary, best accuracy) and local Ollama (free fallback)
+- **System prompt engineering:** Encodes the complete physics-to-finance mapping, regime definitions, trading signals, and few-shot examples in a versioned prompt (`prompts/market_interpreter_v1.md`)
+- **Evaluation:** Regime classification accuracy, prompting strategy comparison (zero-shot vs few-shot vs CoT vs ablation), backend comparison, consistency analysis
+- **Sample market briefings:** LLM-generated reports for key market moments saved to `outputs/llm_reports/`
+
+The LLM does not replace quantitative signals — it translates them into a format that portfolio managers and risk committees can act on without understanding transfer entropy or free-energy landscapes.
+
+See [09_llm_market_interpreter.ipynb](notebooks/09_llm_market_interpreter.ipynb) for the full analysis and [outputs/llm_reports/](outputs/llm_reports/) for sample briefings.
 
 ## Project Evolution
 

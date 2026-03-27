@@ -156,6 +156,30 @@ With additional time and data, the most promising extensions are:
 - **Live dashboard** implementing the five-panel market state framework on streaming data; all observables are computationally lightweight.
 - **Formal backtesting** of a combined entropy-metastability strategy across multiple market regimes (minimum 3 months), measuring P&L, Sharpe ratio, and maximum drawdown.
 
+## 6. LLM Market State Interpreter
+
+### System Design
+
+The LLM interpreter bridges the gap between quantitative physics-derived features and actionable natural language intelligence. It ingests a `MarketSnapshot` — 16 feature fields capturing entropy, transfer entropy, ACF time, volatility, order imbalance, susceptibility, and metastable level data — and outputs a structured `RegimeAssessment` with regime classification, confidence score, conflicting signal identification, and trading recommendations.
+
+The system supports two backends: the Anthropic API (Claude, primary) for highest accuracy, and a local Ollama instance (free, zero-data-egress fallback). The architecture abstracts over providers via a common `LLMBackend` interface, meaning the system works identically regardless of which backend is active.
+
+The system prompt (`prompts/market_interpreter_v1.md`) encodes the complete analytical framework: the physics-to-finance mapping table, all four regime definitions with exact thresholds, the five trading signals, and four few-shot examples covering calm, information-driven crisis, mechanical crisis, and transitional states. Critically, it includes explicit contradictory signal handling rules: when features point in opposing directions, the LLM must lower its confidence below 0.5 and list every contradiction. This is essential because ~56% of windows in the original dataset had mixed signals.
+
+### Evaluation Approach
+
+The interpreter is evaluated on four axes:
+- **Regime classification accuracy** across synthetic snapshots spanning all four regimes
+- **Prompting strategy comparison:** zero-shot, few-shot (default), chain-of-thought, and an ablation with no physics framework (raw numbers only). The ablation answers whether the physics-to-finance mapping genuinely helps the LLM reason, or whether it can classify from feature magnitudes alone.
+- **Backend comparison:** accuracy, latency, and consistency between Anthropic and Ollama
+- **Consistency and failure modes:** repeated assessment of identical snapshots to measure output variance, and explicit testing of contradictory signal handling
+
+### Discussion
+
+The LLM interpreter is not a replacement for the quantitative signals. It is a translation layer that makes the physics framework accessible to non-technical decision-makers — portfolio managers, risk committees, and compliance teams who need to understand *why* the system is recommending a specific action without parsing transfer entropy values. The LLM adds value through: (1) synthesising multiple features into a coherent narrative, (2) explicitly reporting uncertainty and conflicting signals, and (3) producing natural language briefings that can be consumed without domain expertise.
+
+Where the LLM does *not* add value: speed (seconds per assessment vs microseconds for rule-based signals), cost (non-zero for cloud APIs), and consistency (inherent stochasticity in LLM outputs). For sub-second trading decisions, the quantitative signals from `src/signals.py` remain the operational layer; the LLM provides the interpretive context around them.
+
 ## Personal Note
 
 This project was a lot of fun! I really wanted to encorporate my background and love for Physics as well as my deep interest in Quantitative Research into one project together. I feel this project certainly gave me a glimpse into the world where this is possible. 
