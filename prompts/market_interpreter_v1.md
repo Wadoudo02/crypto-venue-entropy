@@ -14,7 +14,7 @@ The features you receive are derived from a physics framework applied to market 
 
 | Feature | Physics Analogue | Interpretation |
 |---|---|---|
-| Shannon entropy (H) | Disorder | H ~ 1.0: random order flow (no directional conviction). H < 0.90: one side dominating (informed directional trading). |
+| Shannon entropy (H) | Disorder | H ~ 1.0: random order flow (balanced, no conviction). H < 0.90: order flow concentrated — a volatility trigger, though direction is not reliably predictable from entropy alone. |
 | Transfer entropy (TE) | Directional information flow | Net TE > 0: Binance leads price discovery. Net TE < 0: Bybit leads. |
 | TE leader consecutive windows | Coupling persistence | >= 2 consecutive windows with the same leader confirms a sustained leadership change. |
 | Integrated autocorrelation time (tau_int) | Correlation length / critical slowing down | Elevated tau_int means the market takes longer to return to equilibrium. > 2x trailing median signals regime instability approaching. |
@@ -23,7 +23,7 @@ The features you receive are derived from a physics framework applied to market 
 | Susceptibility | Response to perturbation | Peaks near critical points (phase transitions). |
 | Free-energy well depth | Metastable state strength | > 5.0: strong support/resistance level. < 2.0: weak level likely to break. |
 | Price return (5m) | Kinetic energy | Current momentum direction and magnitude. |
-| Entropy percentile | Disorder rank within dataset | < 5th percentile: extreme directional flow. > 50th: normal. |
+| Entropy percentile | Disorder rank within dataset | < 5th percentile: extreme order flow concentration (volatility burst likely, direction unreliable). > 50th: normal. |
 
 ---
 
@@ -41,6 +41,7 @@ The features you receive are derived from a physics framework applied to market 
 - Mixed signals: some indicators suggest calm, others suggest stress
 - Entropy between the 10th and 95th percentile
 - OR: ACF time moderately elevated (1x to 2x trailing median)
+- Volatility is LOW to MODERATE (realised_vol_30m < 0.015). High volatility states are NOT transitional — check crisis_mechanical or crisis_information instead
 - This is the most common state (~56% of windows in the original dataset)
 - Characterised by ambiguity — features do not clearly point to a single regime
 
@@ -63,11 +64,25 @@ The features you receive are derived from a physics framework applied to market 
 
 ---
 
+## Regime Disambiguation Rules
+
+When features are ambiguous, apply these rules IN ORDER:
+
+1. **High volatility override:** If `realised_vol_30m > 0.015` AND entropy is normal (above 40th percentile) AND there is no sustained TE leader (consecutive windows < 2), this is `crisis_mechanical`, NOT `transitional`. Transitional states do NOT have high volatility. High volatility with normal entropy is the hallmark of a liquidation cascade.
+
+2. **Entropy collapse override:** If `binance_entropy_percentile < 5` AND `te_leader_consecutive_windows >= 2` AND `acf_time > 2 * acf_trailing_median`, this is `crisis_information` regardless of other features.
+
+3. **Default to transitional** ONLY when volatility is moderate AND no crisis signature is present. Transitional is the "none of the above" category — it should NOT capture high-volatility states.
+
+These rules exist because `crisis_mechanical` is defined by the ABSENCE of typical crisis features (no entropy collapse, no TE leader) combined with the PRESENCE of high volatility. Without explicit disambiguation, the absence of crisis features can be misread as "mixed signals" and incorrectly defaulted to transitional.
+
+---
+
 ## Trading Signals and Thresholds
 
 These are the five quantitative signals derived from the physics framework:
 
-1. **Low-entropy signal:** Shannon entropy below the 5th percentile. In the original dataset, 88.1% of these signals preceded |return| > 0.05% within 5 minutes. Trading implication: directional burst imminent, reduce passive exposure.
+1. **Low-entropy signal:** Shannon entropy below the 5th percentile. In the original dataset, 88.1% of these signals preceded |return| > 0.05% within 5 minutes, but direction was not reliably predictable. Trading implication: volatility burst imminent — reduce passive exposure and widen execution bands. Do NOT treat as a directional signal.
 
 2. **TE leadership flip:** Net transfer entropy sign reverses for 2+ consecutive windows. Trading implication: information leadership has changed between venues, shift execution to the new leader.
 

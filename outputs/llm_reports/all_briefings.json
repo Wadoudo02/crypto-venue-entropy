@@ -25,23 +25,27 @@
     "timestamp": "2026-01-31T14:30:00Z",
     "regime": "crisis_information",
     "confidence": 0.92,
-    "confidence_rationale": "All four primary indicators (entropy, TE leadership, ACF time, well depth) align consistently toward an information-driven crisis. No contradictory signals detected.",
+    "confidence_rationale": "All four primary indicators align consistently toward an information-driven crisis with no contradictory signals. Entropy has collapsed to the 2nd percentile, TE leadership is sustained across 4 consecutive windows, ACF time is 3.2x trailing median, and well depth is below the 2.0 breakdown threshold. The only minor source of uncertainty is that susceptibility (0.018), while elevated, is not at its most extreme \u2014 a trivial concern given the strength of all other signals.",
     "crash_type": "information_driven",
     "risk_level": "extreme",
     "conflicting_signals": [],
     "recommended_actions": [
-      "Reduce passive exposure on both venues immediately",
-      "Shift execution to Binance (current information leader, 4 consecutive windows)",
-      "Do NOT provide liquidity at metastable level 78200 (well depth 1.3 < 2.0 threshold)",
-      "Widen execution bands by 2x baseline"
+      "Exit passive long positions immediately \u2014 informed sell-side flow is dominant and sustained",
+      "Shift all execution to Binance (confirmed information leader for 4 consecutive windows)",
+      "Do NOT place passive limit orders at metastable level 78200 (well depth 1.3 is well below the 2.0 threshold \u2014 level will likely break)",
+      "Widen execution bands by at least 2x baseline to account for ACF spike (tau_int at 97th percentile)",
+      "Reduce position sizing to minimum until entropy recovers above 10th percentile and ACF time falls below 2x trailing median",
+      "If price approaches 78200, treat as a level to fade only with strictly defined stop-losses, not passive resting orders"
     ],
-    "reasoning": "Shannon entropy on Binance has collapsed to the 2nd percentile (H=0.61), indicating highly directional order flow from informed traders. Transfer entropy shows clear Binance leadership sustained for 4 consecutive windows. The integrated autocorrelation time has spiked to 3.2x its trailing median (4.8 / 1.5), signalling critical slowing down. This signature matches the information-driven crash pattern: a coordinated sell-off led by informed flow on the dominant venue, not a mechanical liquidation cascade. The nearest metastable level at 78200 has a well depth of only 1.3, suggesting it will not hold.",
-    "physics_summary": "The system has undergone a phase transition from a disordered (high-entropy) state to an ordered (low-entropy) state with strong directional coupling between venues. This is analogous to spontaneous magnetisation below the critical temperature: long-range order has emerged, correlation lengths have diverged, and the free-energy landscape is flattening.",
+    "reasoning": "The entropy collapse override rule is triggered in full: binance_entropy_percentile is at the 2nd percentile (H=0.61), te_leader_consecutive_windows is 4 (well above the 2-window threshold), and acf_time is 4.8 against a trailing median of 1.5, giving a ratio of 3.2x \u2014 far exceeding the 2x critical slowing down threshold. This is the textbook crisis_information signature. Shannon entropy on Binance has collapsed to near-minimum, indicating that order flow is highly concentrated and directional rather than random \u2014 the hallmark of informed institutional or algorithmic selling, not noise. The sustained Binance TE leadership across 4 windows confirms that Binance is the venue where price discovery is originating; Bybit is following. Order imbalance at -0.35 corroborates the directional conviction: there is a significant excess of sell-side flow. The integrated autocorrelation time at 3.2x its trailing median signals critical slowing down \u2014 the market is taking far longer to return to equilibrium, consistent with a system that has crossed a phase boundary and cannot easily reverse. The nearest metastable support at 78200 is fragile (well depth 1.3), meaning it is unlikely to absorb the ongoing selling pressure. Realised 30-minute volatility at 0.025 is elevated, consistent with a genuine price dislocation rather than a low-activity anomaly. All signals are internally coherent and point to the same conclusion: this is a coordinated, informed-flow-driven sell-off, not a mechanical liquidation cascade.",
+    "physics_summary": "The system has undergone a phase transition from a disordered high-entropy state to a strongly ordered low-entropy state. This is analogous to spontaneous magnetisation below the critical temperature: long-range directional order has emerged across the order book, correlation lengths have diverged (elevated tau_int), and the free-energy landscape has flattened near the nearest metastable well, making it unable to trap the system. Binance is acting as the external field driving the phase transition, with Bybit coupling to it. The system is far from equilibrium and unlikely to self-correct without a significant exogenous counterforce.",
     "key_features_driving_assessment": [
-      "binance_entropy_percentile: 2nd (extreme low \u2014 strong directional flow)",
-      "te_leader: binance (4 consecutive windows \u2014 confirmed leadership)",
-      "acf_time: 4.8 = 3.2x trailing median (critical slowing down)",
-      "nearest_well_depth: 1.3 (degrading support, below 2.0 threshold)"
+      "binance_entropy_percentile: 2nd (extreme entropy collapse \u2014 strong concentrated directional flow)",
+      "te_leader: binance sustained for 4 consecutive windows (confirmed, persistent information leadership)",
+      "acf_time: 4.8 = 3.2x trailing median of 1.5 (severe critical slowing down \u2014 regime instability)",
+      "nearest_well_depth: 1.3 (well below 2.0 breakdown threshold \u2014 support level will not hold)",
+      "order_imbalance: -0.35 (strong sell-side conviction corroborating entropy signal)",
+      "realised_vol_30m: 0.025 (elevated, consistent with genuine dislocation)"
     ]
   },
   "crash_mech_2026-02-05T22-00": {
@@ -58,40 +62,47 @@
       "Pull passive orders at metastable level 63500 (well depth 1.8 < 2.0 threshold)",
       "Reduce position sizing until ACF time normalises"
     ],
-    "reasoning": "Despite extreme price movement (return_5m = -1.2%), Shannon entropy remains normal on both venues (55th percentile on Binance). This rules out informed directional trading as the driver. Transfer entropy shows no sustained leadership (1 window only), consistent with forced liquidations hitting both venues simultaneously. The ACF time is elevated at 1.9x trailing median (3.5 / 1.8), indicating increasing correlation length but not the extreme spike seen in information-driven crises. This is a mechanical crash driven by cascading liquidations.",
+    "reasoning": "Despite extreme price movement (return_5m = -1.2%), Shannon entropy remains normal on both venues (55th percentile on Binance). This rules out informed directional trading as the driver. Transfer entropy shows no sustained leadership (1 window only), consistent with forced liquidations hitting both venues simultaneously. The ACF time is elevated at 1.9x trailing median (3.5 / 1.8), indicating increasing correlation length but not the extreme spike seen in information-driven crises. This is a mechanical crash driven by cascading liquidations. High volatility override rule applies: realised_vol_30m = 0.032 (well above 0.015 threshold) AND entropy is normal (55th percentile, above 40th percentile) AND no sustained TE leader (consecutive windows = 1) \u2014 this is crisis_mechanical, not transitional.",
     "physics_summary": "The system is experiencing large kinetic energy (high volatility) without the entropy collapse that accompanies phase transitions. This is analogous to thermal agitation rather than spontaneous magnetisation: the particles are moving violently but without long-range order. The energy landscape is being reshaped by external forcing (liquidations) rather than internal dynamics.",
     "key_features_driving_assessment": [
       "binance_entropy_percentile: 55th (normal \u2014 NOT information-driven)",
-      "realised_vol_30m: 0.032 (extremely high)",
+      "realised_vol_30m: 0.032 (extremely high, well above 0.015 crisis threshold)",
       "te_leader_consecutive_windows: 1 (no sustained leadership \u2014 bidirectional)",
-      "nearest_well_depth: 1.8 (degrading, below 2.0 threshold)"
+      "nearest_well_depth: 1.8 (degrading, below 2.0 threshold)",
+      "acf_time: 3.5 = 1.94x trailing median (elevated but not at extreme crisis levels)"
     ]
   },
   "transitional_2026-02-02T08-15": {
     "timestamp": "2026-02-02T08:15:00Z",
     "regime": "transitional",
     "confidence": 0.35,
-    "confidence_rationale": "Entropy suggests emerging directional pressure (18th percentile) but ACF time remains below median, inconsistent with a regime shift. TE leadership is sustained (3 windows) but volatility and susceptibility are low. The physics is ambiguous \u2014 some features point toward crisis, others toward calm.",
+    "confidence_rationale": "Entropy has dropped to the 18th percentile, signalling emerging directional pressure, and TE leadership is sustained across 3 consecutive windows \u2014 both pointing toward a developing regime shift. However, ACF time remains below its trailing median (1.1 vs 1.4), ruling out critical slowing down, and susceptibility is low (0.004), indicating the market is not near a tipping point. Volatility is moderate (0.008), well below the crisis threshold of 0.015. The full crisis signature has not materialised. Features are genuinely split between calm-leaning (ACF, susceptibility, volatility) and stress-leaning (entropy, TE leadership, order imbalance), warranting low confidence and a transitional classification.",
     "crash_type": null,
     "risk_level": "medium",
     "conflicting_signals": [
-      "Entropy at 18th percentile suggests directional pressure, but ACF time is below median (no critical slowing down)",
-      "TE leadership sustained for 3 windows (suggests emerging leadership), but volatility is low (no price impact yet)",
-      "Order imbalance elevated at -0.30, but susceptibility is low (market not sensitive to shocks)"
+      "Entropy at 18th percentile suggests growing directional conviction, but ACF time is BELOW its trailing median (1.1 vs 1.4) \u2014 critical slowing down is absent, which is inconsistent with a genuine regime shift",
+      "TE leadership sustained for 3 consecutive windows (confirmed Binance dominance) yet realised volatility is only 0.008 \u2014 information flow leadership has not translated into price impact, an unusual divergence",
+      "Order imbalance is moderately elevated at -0.30 (net selling pressure), but susceptibility is very low (0.004) \u2014 the market is absorbing sell-side flow without amplifying it, suggesting the imbalance is not yet destabilising",
+      "Well depth of 4.2 at nearest metastable level (82000) is borderline \u2014 below the 5.0 strong-support threshold but above the 2.0 fragile-support threshold, providing no clear signal on support durability",
+      "Binance entropy (18th percentile) and Bybit entropy (not in crisis territory) are diverging slightly \u2014 cross-venue entropy divergence can precede information-driven moves but is not yet extreme"
     ],
     "recommended_actions": [
-      "Maintain current position sizing \u2014 no clear signal to reduce",
-      "Monitor entropy and ACF time for convergence before acting",
-      "Keep passive orders at metastable level 82000 cautiously (well depth 4.2 \u2014 borderline)",
-      "If entropy drops below 5th percentile AND ACF rises above 2x median, treat as crisis_information"
+      "Do NOT increase position sizing \u2014 the ambiguity in the physics does not justify adding risk",
+      "Maintain cautious passive limit orders at metastable level 82000, but be prepared to pull them quickly (well depth 4.2 is borderline; any further entropy decline or ACF spike should trigger immediate withdrawal)",
+      "Shift execution monitoring to Binance as the confirmed TE leader (3 consecutive windows) \u2014 route aggressive orders through Binance if acting directionally",
+      "Set alert thresholds: if binance_entropy_percentile falls below 5th AND acf_time rises above 2.8 (2x trailing median of 1.4), reclassify immediately as crisis_information and reduce passive exposure",
+      "If realised_vol_30m rises above 0.015 with entropy remaining normal, reclassify as crisis_mechanical and shift to liquidity-provision with tight stops",
+      "Monitor order imbalance: if it deepens below -0.45 in conjunction with entropy decline, treat as an escalating information-driven signal"
     ],
-    "reasoning": "The market shows mixed signals. Entropy has dropped to the 18th percentile, below normal but well above the 5th percentile crisis threshold. Binance has held TE leadership for 3 windows, which normally signals a regime shift, but the ACF time remains below its trailing median (1.1 vs 1.4), suggesting the market is still equilibrating quickly. Order imbalance is moderately negative (-0.30) but susceptibility is low, meaning the market is absorbing selling pressure without amplifying it. This is a transitional state where some features are trending toward crisis but the full crisis signature has not materialised.",
-    "physics_summary": "The system shows partial ordering: entropy has decreased from maximum disorder but correlation lengths remain short. This is analogous to a system near but still above its critical temperature \u2014 some local order is forming but the phase transition has not occurred. The free-energy landscape is intact (well depth 4.2) but not deep enough to provide strong stability.",
+    "reasoning": "The current state presents a genuinely mixed picture that resists clean classification. On the stress side: Binance entropy has declined to the 18th percentile (H=0.92), indicating order flow is becoming more concentrated than roughly 82% of historical windows \u2014 a meaningful but sub-crisis level of directional pressure. Transfer entropy leadership has been sustained on Binance for 3 consecutive windows, which by the system's own rules constitutes confirmed leadership. Order imbalance is -0.30, reflecting net selling. On the calm side: the integrated autocorrelation time (1.1) sits below its 20-window trailing median (1.4) at the 28th percentile, the opposite of what is expected during a genuine regime transition. Critical slowing down \u2014 the ACF signature of an approaching phase transition \u2014 is absent. Susceptibility (0.004) is low, meaning the market is not near a tipping point in terms of its sensitivity to perturbation. Realised volatility (0.008) is moderate and well below the 0.015 crisis disambiguation threshold. The free-energy well at 82000 (depth 4.2) provides moderate but not strong support. The most coherent interpretation is that Binance is experiencing an early-stage increase in directional order flow, possibly from informed participants beginning to position, but the broader market structure has not yet responded \u2014 correlation lengths are short, price impact is minimal, and support levels are intact. This is a transitional state in the truest sense: some features are trending toward crisis_information but the full signature (entropy collapse + ACF spike + well depth degradation) has not converged. The correct response is heightened monitoring rather than aggressive repositioning.",
+    "physics_summary": "The system is in a partially ordered state, analogous to a magnetic material held slightly above its Curie temperature. Local clusters of aligned spins (directional order flow on Binance) are forming, as evidenced by the entropy decline, but long-range order has not emerged \u2014 correlation lengths (ACF time) remain short and the susceptibility peak that accompanies a true phase transition is absent. The free-energy landscape retains meaningful well structure (depth 4.2) but is shallower than in a fully stable state. The system is drifting toward a potential phase transition without having committed to one. External forcing (informed selling, as suggested by order imbalance) is present but has not yet overcome the market's equilibrating forces.",
     "key_features_driving_assessment": [
-      "binance_entropy_percentile: 18th (below normal but above crisis threshold)",
-      "te_leader_consecutive_windows: 3 (sustained, but no price impact)",
-      "acf_time: 1.1 < trailing median 1.4 (no critical slowing down)",
-      "susceptibility: 0.004 (low \u2014 market not near tipping point)"
+      "binance_entropy_percentile: 18th \u2014 below normal, directional pressure building, but well above the 5th percentile crisis threshold",
+      "te_leader_consecutive_windows: 3 \u2014 confirmed Binance TE leadership, but no commensurate price impact or ACF response",
+      "acf_time: 1.1 vs trailing median 1.4 \u2014 BELOW median, critical slowing down is absent, inconsistent with imminent phase transition",
+      "susceptibility: 0.004 \u2014 low, market is not near a tipping point",
+      "realised_vol_30m: 0.008 \u2014 moderate, below the 0.015 high-volatility override threshold",
+      "nearest_well_depth: 4.2 \u2014 borderline support, neither strong (>5.0) nor fragile (<2.0)"
     ]
   }
 }
